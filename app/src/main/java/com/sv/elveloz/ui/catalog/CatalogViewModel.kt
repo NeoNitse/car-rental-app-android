@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.sv.elveloz.domain.usecase.CancelRentalUseCase
 
 data class RentalDetailUiState(
     val car: CarEntity,
@@ -29,7 +30,8 @@ class CatalogViewModel(
     private val calculateCostUseCase: CalculateCostUseCase,
     private val getActiveRentalUseCase: GetActiveRentalUseCase,
     private val updateCarStatusUseCase: UpdateCarStatusUseCase,
-    private val completeRentalUseCase: CompleteRentalUseCase
+    private val completeRentalUseCase: CompleteRentalUseCase,
+    private val cancelRentalUseCase: CancelRentalUseCase
 ) : ViewModel() {
 
     private val _filterStatus = MutableStateFlow("TODOS")
@@ -58,6 +60,7 @@ class CatalogViewModel(
         }
         CatalogUiState(
             cars = filteredBySearch,
+            allCars = cars,
             filterStatus = filter,
             searchQuery = query,
             selectedCar = selectedCar
@@ -132,6 +135,15 @@ class CatalogViewModel(
         val rental = detail.rental ?: return
         viewModelScope.launch {
             completeRentalUseCase(rental, detail.car.id)
+            _rentalDetail.value = null
+        }
+    }
+
+    fun onCancelRental() {
+        val detail = _rentalDetail.value ?: return
+        val rental = detail.rental ?: return
+        viewModelScope.launch {
+            cancelRentalUseCase(rental, detail.car.id)
             _rentalDetail.value = null
         }
     }

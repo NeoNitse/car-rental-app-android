@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.sv.elveloz.data.local.AppDatabase
 import com.sv.elveloz.data.repository.CarRepositoryImpl
 import com.sv.elveloz.domain.usecase.CalculateCostUseCase
+import com.sv.elveloz.domain.usecase.CancelRentalUseCase
 import com.sv.elveloz.domain.usecase.CompleteRentalUseCase
 import com.sv.elveloz.domain.usecase.GetActiveRentalUseCase
 import com.sv.elveloz.domain.usecase.GetCarsUseCase
@@ -29,7 +30,8 @@ class AppViewModelFactory(private val context: Context) : ViewModelProvider.Fact
                     calculateCostUseCase = CalculateCostUseCase(),
                     getActiveRentalUseCase = GetActiveRentalUseCase(repository),
                     updateCarStatusUseCase = UpdateCarStatusUseCase(repository),
-                    completeRentalUseCase = CompleteRentalUseCase(repository)
+                    completeRentalUseCase = CompleteRentalUseCase(repository),
+                    cancelRentalUseCase = CancelRentalUseCase(repository)
                 ) as T
             }
             else -> throw IllegalArgumentException("ViewModel desconocido: ${modelClass.name}")

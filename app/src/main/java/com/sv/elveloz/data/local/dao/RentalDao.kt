@@ -16,6 +16,9 @@ interface RentalDao {
     @Update
     suspend fun update(rental: RentalEntity)
 
+    @Query("DELETE FROM rentals WHERE id = :rentalId")
+    suspend fun delete(rentalId: Int)
+
     @Query("SELECT * FROM rentals WHERE carId = :carId AND isActive = 1 LIMIT 1")
     suspend fun getActiveRentalForCar(carId: Int): RentalEntity?
 

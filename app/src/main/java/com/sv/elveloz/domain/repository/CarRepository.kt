@@ -18,4 +18,6 @@ interface CarRepository {
     suspend fun updateCarStatus(carId: Int, newStatus: CarStatus)
 
     suspend fun completeRental(rental: RentalEntity, carId: Int)
+
+    suspend fun cancelRental(rental: RentalEntity, carId: Int)
 }

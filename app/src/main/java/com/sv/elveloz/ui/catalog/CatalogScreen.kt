@@ -65,7 +65,7 @@ fun CatalogScreen(
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
         Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
 
-            QuickStatsPanel(cars = uiState.cars)
+            QuickStatsPanel(cars = uiState.allCars)
 
             OutlinedTextField(
                 value = uiState.searchQuery,
@@ -120,7 +120,8 @@ fun CatalogScreen(
             detail = detail,
             onDismiss = { viewModel.onDismissDetail() },
             onMarkAsInUse = { viewModel.onMarkAsInUse() },
-            onCompleteRental = { viewModel.onCompleteRental() }
+            onCompleteRental = { viewModel.onCompleteRental() },
+            onCancelRental = { viewModel.onCancelRental() }
         )
     }
 }
@@ -137,7 +138,8 @@ private fun RentalDetailDialog(
     detail: RentalDetailUiState,
     onDismiss: () -> Unit,
     onMarkAsInUse: () -> Unit,
-    onCompleteRental: () -> Unit
+    onCompleteRental: () -> Unit,
+    onCancelRental: () -> Unit
 ) {
     val car = detail.car
     val rental = detail.rental
@@ -147,7 +149,7 @@ private fun RentalDetailDialog(
         title = { Text("${car.brand} ${car.model}") },
         text = {
             Column {
-                // Tip 3: Línea de tiempo visual (Stepper de 3 pasos)
+
                 RentalStepper(status = car.status)
 
                 Divider(modifier = Modifier.padding(vertical = 12.dp))
@@ -182,8 +184,15 @@ private fun RentalDetailDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cerrar")
+            Row {
+                if (car.status == CarStatus.EN_PROCESO) {
+                    TextButton(onClick = onCancelRental) {
+                        Text("Cancelar Reserva", color = MaterialTheme.colorScheme.error)
+                    }
+                }
+                TextButton(onClick = onDismiss) {
+                    Text("Cerrar")
+                }
             }
         }
     )
@@ -311,7 +320,7 @@ private fun CarCard(car: CarEntity, onClick: () -> Unit) {
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         shape = RoundedCornerShape(16.dp)
     ) {
         Row(

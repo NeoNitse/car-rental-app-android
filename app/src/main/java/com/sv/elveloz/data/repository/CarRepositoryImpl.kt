@@ -5,7 +5,6 @@ import com.sv.elveloz.data.local.dao.RentalDao
 import com.sv.elveloz.data.local.entity.RentalEntity
 import com.sv.elveloz.domain.model.CarStatus
 import com.sv.elveloz.domain.repository.CarRepository
-import kotlinx.coroutines.flow.Flow
 
 class CarRepositoryImpl(
     private val carDao: CarDao,
@@ -30,6 +29,11 @@ class CarRepositoryImpl(
 
     override suspend fun completeRental(rental: RentalEntity, carId: Int) {
         rentalDao.update(rental.copy(isActive = false))
+        carDao.updateStatus(carId, CarStatus.DISPONIBLE)
+    }
+
+    override suspend fun cancelRental(rental: RentalEntity, carId: Int) {
+        rentalDao.delete(rental.id)
         carDao.updateStatus(carId, CarStatus.DISPONIBLE)
     }
 }

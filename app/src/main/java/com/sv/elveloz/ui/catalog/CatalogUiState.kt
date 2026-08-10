@@ -4,6 +4,7 @@ import com.sv.elveloz.data.local.entity.CarEntity
 
 data class CatalogUiState(
     val cars: List<CarEntity> = emptyList(),
+    val allCars: List<CarEntity> = emptyList(),
     val filterStatus: String = "TODOS",
     val searchQuery: String = "",
     val isLoading: Boolean = false,

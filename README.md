@@ -193,23 +193,3 @@ Si una reserva fue registrada por error, mientras el vehículo esté **En Proces
 3. **Seguimiento visual de estados** — stepper de 3 pasos con colores semánticos en el detalle de cada reserva.
 4. **Consistencia visual** — tarjetas uniformes con iconografía y fondos pastel según el estado del vehículo.
 5. **Inputs adecuados** — `DatePicker` nativo de Material 3 en lugar de campos de texto libre para las fechas.
-
-##  Capturas de pantalla
-
-*(Agregar acá las capturas del catálogo, el diálogo de reserva y el detalle con el stepper. Guardalas en una carpeta `/screenshots` dentro del repositorio y referencialas así:)*
-
-```markdown
-![Catálogo](screenshots/catalogo.png)
-![Reserva](screenshots/reserva.png)
-![Detalle con stepper](screenshots/detalle.png)
-```
-
-## 🎓 Contexto académico
-
-| | |
-|---|---|
-| Materia | Desarrollo de Aplicaciones Móviles II |
-| Institución | Universidad Modular Abierta |
-| Docente | Ing. Herberth Contreras |
-| Evaluación | Laboratorio 1 |
-| Fecha de entrega | 18 de agosto de 2026 |

@@ -1,6 +1,7 @@
+// Ruta: com.sv.elveloz/ui/catalog/CatalogScreen.kt
 package com.sv.elveloz.ui.catalog
 
-import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,17 +9,20 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -27,28 +31,38 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.sv.elveloz.data.local.entity.CarEntity
 import com.sv.elveloz.domain.model.CarStatus
+import kotlinx.coroutines.launch
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -62,37 +76,117 @@ fun CatalogScreen(
     val uiState by viewModel.uiState.collectAsState()
     val rentalDetail by viewModel.rentalDetail.collectAsState()
 
-    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
-        Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
 
-            QuickStatsPanel(cars = uiState.allCars)
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = Color(0xFFF5F5F5) // Fondo gris muy claro para herramienta interna
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+        ) {
+            Spacer(modifier = Modifier.height(24.dp))
 
+            // 1. Header (Panel de control)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(Color.Black, shape = CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Filled.DirectionsCar, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = "Recepción",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = "El Veloz",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.Black
+                    )
+                }
+            }
+
+            // 2. Buscador Estilo Moderno
             OutlinedTextField(
                 value = uiState.searchQuery,
                 onValueChange = { viewModel.onSearchQueryChange(it) },
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("Buscar por marca o modelo...") },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                singleLine = true
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                placeholder = { Text("Buscar por marca o modelo...", color = Color.Gray) },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = Color.Gray) },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    cursorColor = Color.Black
+                )
             )
 
+            // 3. Panel de Estadísticas
+            QuickStatsPanel(cars = uiState.allCars)
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 4. Filtros (Operativos)
+            Text(
+                text = "Filtro de Flota",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
             FilterChipsRow(
-                selectedFilter = uiState.filterStatus,
-                onFilterSelected = { viewModel.onFilterChange(it) }
+                selectedFilter = uiState.filterStatus ?: "",
+                onFilterSelected = { viewModel.onFilterChange(newFilter = it) }
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 5. Inventario en Lista (Mejor para lectura del recepcionista)
+            Text(
+                text = "Estado del Inventario",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+                modifier = Modifier.padding(bottom = 12.dp)
             )
 
             if (uiState.isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = Color.Black)
                 }
+            } else if (uiState.cars.isEmpty()) {
+                EmptySearchState(
+                    searchQuery = uiState.searchQuery,
+                    modifier = Modifier.weight(1f)
+                )
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                LazyColumn( // Cambiado a Lista vertical
+                    contentPadding = PaddingValues(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.weight(1f)
                 ) {
                     items(uiState.cars, key = { it.id }) { car ->
-                        CarCard(
+                        ReceptionistVehicleCard( // Nueva tarjeta horizontal
                             car = car,
                             onClick = { viewModel.onCarClicked(car) }
                         )
@@ -102,12 +196,16 @@ fun CatalogScreen(
         }
     }
 
+    // --- DIALOGOS MANTENIDOS INTACTOS ---
     uiState.selectedCar?.let { car ->
         RentalDialog(
             car = car,
             onDismiss = { viewModel.onDismissDialog() },
             onConfirm = { customerName, pickupMs, returnMs ->
                 viewModel.onConfirmRental(customerName, pickupMs, returnMs)
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Reserva registrada para $customerName")
+                }
             },
             calculateCost = { pickupMs, returnMs ->
                 viewModel.calculateCost(pickupMs, returnMs, car.pricePerDay)
@@ -119,10 +217,237 @@ fun CatalogScreen(
         RentalDetailDialog(
             detail = detail,
             onDismiss = { viewModel.onDismissDetail() },
-            onMarkAsInUse = { viewModel.onMarkAsInUse() },
-            onCompleteRental = { viewModel.onCompleteRental() },
-            onCancelRental = { viewModel.onCancelRental() }
+            onMarkAsInUse = {
+                viewModel.onMarkAsInUse()
+                coroutineScope.launch { snackbarHostState.showSnackbar("Vehículo marcado como retirado") }
+            },
+            onCompleteRental = {
+                viewModel.onCompleteRental()
+                coroutineScope.launch { snackbarHostState.showSnackbar("Vehículo devuelto con éxito") }
+            },
+            onCancelRental = {
+                viewModel.onCancelRental()
+                coroutineScope.launch { snackbarHostState.showSnackbar("Reserva cancelada correctamente") }
+            }
         )
+    }
+}
+
+// ==============================================================================
+// NUEVA TARJETA B2B: Tarjeta Horizontal para Recepcionista
+// ==============================================================================
+@Composable
+private fun ReceptionistVehicleCard(
+    car: CarEntity,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val format = NumberFormat.getCurrencyInstance(Locale.US)
+    val formattedPrice = format.format(car.pricePerDay)
+
+    val isAvailable = car.status == CarStatus.DISPONIBLE
+    val alphaValue = if (isAvailable) 1f else 0.5f
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Icono del auto compacto a la izquierda
+            Box(
+                modifier = Modifier
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFFF3F4F6)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.DirectionsCar,
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp),
+                    tint = Color.Gray.copy(alpha = alphaValue)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Información central: Marca, Modelo y Precio
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "${car.brand} ${car.model}",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black.copy(alpha = alphaValue),
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "$formattedPrice / día",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.DarkGray.copy(alpha = alphaValue)
+                )
+            }
+
+            // Badge de estado a la derecha (Siempre visible y opaco para lectura rápida)
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = getStatusColor(car.status).copy(alpha = 0.15f)
+            ) {
+                val statusText = when (car.status) {
+                    CarStatus.DISPONIBLE -> "Disponible"
+                    CarStatus.EN_PROCESO -> "En Proceso"
+                    CarStatus.EN_USO -> "En Uso"
+                }
+                Text(
+                    text = statusText,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = getStatusColor(car.status),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                )
+            }
+        }
+    }
+}
+
+// ==============================================================================
+// COMPONENTES AUXILIARES
+// ==============================================================================
+
+private fun getStatusColor(status: CarStatus): Color {
+    return when (status) {
+        CarStatus.DISPONIBLE -> Color(0xFF4CAF50)
+        CarStatus.EN_PROCESO -> Color(0xFFFF9800)
+        CarStatus.EN_USO -> Color(0xFF2196F3)
+    }
+}
+
+@Composable
+private fun QuickStatsPanel(cars: List<CarEntity>) {
+    val disponibles = cars.count { it.status == CarStatus.DISPONIBLE }
+    val enProceso = cars.count { it.status == CarStatus.EN_PROCESO }
+    val enUso = cars.count { it.status == CarStatus.EN_USO }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        StatItem(label = "Disp.", value = disponibles, color = Color(0xFF4CAF50), modifier = Modifier.weight(1f))
+        StatItem(label = "Proc.", value = enProceso, color = Color(0xFFFF9800), modifier = Modifier.weight(1f))
+        StatItem(label = "En Uso", value = enUso, color = Color(0xFF2196F3), modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun StatItem(label: String, value: Int, color: Color, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.3f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .padding(vertical = 12.dp)
+                .fillMaxWidth()
+        ) {
+            Text(
+                text = value.toString(),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = color
+            )
+            Text(
+                text = label,
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilterChipsRow(
+    selectedFilter: String,
+    onFilterSelected: (String) -> Unit
+) {
+    val filters = listOf("TODOS", "DISPONIBLE", "EN_PROCESO", "EN_USO")
+    val labels = mapOf(
+        "TODOS" to "Todos (8)",
+        "DISPONIBLE" to "Disponibles",
+        "EN_PROCESO" to "En Proceso",
+        "EN_USO" to "En Uso"
+    )
+
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(filters) { filter ->
+            FilterChip(
+                selected = selectedFilter == filter,
+                onClick = { onFilterSelected(filter) },
+                label = { Text(labels[filter] ?: filter, fontWeight = FontWeight.SemiBold) },
+                shape = RoundedCornerShape(50),
+                // Aquí aplicamos los colores explícitos para forzar la visibilidad
+                colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
+                    containerColor = Color.White, // Fondo normal
+                    labelColor = Color.DarkGray, // Color de texto normal (¡Esto soluciona el texto invisible!)
+                    selectedContainerColor = Color(0xFF374151), // Fondo oscuro al seleccionar
+                    selectedLabelColor = Color.White // Texto blanco al seleccionar
+                ),
+                border = androidx.compose.material3.FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selectedFilter == filter,
+                    borderColor = Color.LightGray,
+                    selectedBorderColor = Color.Transparent
+                )
+            )
+        }
+    }
+}
+
+@Composable
+fun EmptySearchState(searchQuery: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Filled.DirectionsCar,
+            contentDescription = "Sin resultados",
+            modifier = Modifier.size(72.dp),
+            tint = Color.LightGray
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "No se encontraron vehículos",
+            style = MaterialTheme.typography.titleLarge,
+            color = Color.Black
+        )
+        if (searchQuery.isNotEmpty()) {
+            Text(
+                text = "No hay coincidencias para \"$searchQuery\"",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+        }
     }
 }
 
@@ -149,17 +474,18 @@ private fun RentalDetailDialog(
         title = { Text("${car.brand} ${car.model}") },
         text = {
             Column {
-
                 RentalStepper(status = car.status)
-
-                Divider(modifier = Modifier.padding(vertical = 12.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
                 if (rental != null) {
+                    val format = NumberFormat.getCurrencyInstance(Locale.US)
+                    val formattedTotal = format.format(rental.totalCost)
+
                     Text("Cliente: ${rental.customerName}", style = MaterialTheme.typography.bodyMedium)
                     Text("Recogida: ${formatDate(rental.pickupDateMs)}", style = MaterialTheme.typography.bodyMedium)
                     Text("Entrega: ${formatDate(rental.returnDateMs)}", style = MaterialTheme.typography.bodyMedium)
                     Text(
-                        "Costo total: $${rental.totalCost}",
+                        "Costo total: $formattedTotal",
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.padding(top = 8.dp)
                     )
@@ -247,131 +573,6 @@ private fun RentalStepper(status: CarStatus) {
             }
         }
     }
-}
-
-@Composable
-private fun QuickStatsPanel(cars: List<CarEntity>) {
-    val disponibles = cars.count { it.status == CarStatus.DISPONIBLE }
-    val enProceso = cars.count { it.status == CarStatus.EN_PROCESO }
-    val enUso = cars.count { it.status == CarStatus.EN_USO }
-
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        StatItem(label = "Disponibles", value = disponibles, color = Color(0xFF4CAF50), modifier = Modifier.weight(1f))
-        StatItem(label = "En Proceso", value = enProceso, color = Color(0xFFFF9800), modifier = Modifier.weight(1f))
-        StatItem(label = "En Uso", value = enUso, color = Color(0xFF2196F3), modifier = Modifier.weight(1f))
-    }
-}
-
-@Composable
-private fun StatItem(label: String, value: Int, color: Color, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.12f)),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth()
-        ) {
-            Text(text = value.toString(), style = MaterialTheme.typography.headlineMedium, color = color)
-            Text(text = label, style = MaterialTheme.typography.bodySmall)
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun FilterChipsRow(
-    selectedFilter: String,
-    onFilterSelected: (String) -> Unit
-) {
-    val filters = listOf("TODOS", "DISPONIBLE", "EN_PROCESO", "EN_USO")
-    val labels = mapOf(
-        "TODOS" to "Todos (8)",
-        "DISPONIBLE" to "Disponibles",
-        "EN_PROCESO" to "En Proceso",
-        "EN_USO" to "En Uso"
-    )
-
-    LazyRow(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(filters) { filter ->
-            FilterChip(
-                selected = selectedFilter == filter,
-                onClick = { onFilterSelected(filter) },
-                label = { Text(labels[filter] ?: filter) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun CarCard(car: CarEntity, onClick: () -> Unit) {
-    val (accentColor, containerColor) = when (car.status) {
-        CarStatus.DISPONIBLE -> Color(0xFF4CAF50) to Color(0xFFE8F5E9)
-        CarStatus.EN_PROCESO -> Color(0xFFFF9800) to Color(0xFFFFF3E0)
-        CarStatus.EN_USO -> Color(0xFF2196F3) to Color(0xFFE3F2FD)
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .background(containerColor, shape = RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.DirectionsCar,
-                    contentDescription = null,
-                    tint = accentColor,
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-
-            Column(
-                modifier = Modifier.weight(1f).padding(horizontal = 12.dp)
-            ) {
-                Text(text = "${car.brand} ${car.model}", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = "$${car.pricePerDay} / día",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            StatusBadge(status = car.status)
-        }
-    }
-}
-
-@Composable
-private fun StatusBadge(status: CarStatus) {
-    val (label, color) = when (status) {
-        CarStatus.DISPONIBLE -> "Disponible" to Color(0xFF4CAF50)
-        CarStatus.EN_PROCESO -> "En Proceso" to Color(0xFFFF9800)
-        CarStatus.EN_USO -> "En Uso" to Color(0xFF2196F3)
-    }
-    Text(
-        text = label,
-        color = Color.White,
-        modifier = Modifier
-            .background(color, shape = RoundedCornerShape(8.dp))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
-        style = MaterialTheme.typography.labelSmall
-    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -494,3 +695,4 @@ private fun RentalDialog(
         }
     }
 }
+

@@ -24,4 +24,7 @@ interface RentalDao {
 
     @Query("SELECT * FROM rentals ORDER BY id DESC")
     fun getAllRentals(): Flow<List<RentalEntity>>
+
+    @Query("SELECT * FROM rentals WHERE estado = 'SOLICITADA'")
+    fun obtenerSolicitudesPendientes(): Flow<List<RentalEntity>>
 }

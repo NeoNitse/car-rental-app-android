@@ -8,16 +8,19 @@ import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.sv.elveloz.data.local.dao.CarDao
 import com.sv.elveloz.data.local.dao.RentalDao
+import com.sv.elveloz.data.local.dao.UsuarioDao
 import com.sv.elveloz.data.local.entity.CarEntity
 import com.sv.elveloz.data.local.entity.RentalEntity
+import com.sv.elveloz.data.local.entity.UsuarioEntity
 import com.sv.elveloz.domain.model.CarStatus
+import com.sv.elveloz.domain.model.RolUsuario
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Database(
-    entities = [CarEntity::class, RentalEntity::class],
-    version = 1,
+    entities = [CarEntity::class, RentalEntity::class, UsuarioEntity::class],
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -25,6 +28,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     abstract fun carDao(): CarDao
     abstract fun rentalDao(): RentalDao
+    abstract fun usuarioDao(): UsuarioDao
 
     companion object {
         @Volatile
@@ -36,7 +40,8 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "el_veloz_db"
-                ).addCallback(PreseedCallback(context)).build()
+                ).fallbackToDestructiveMigration()
+                    .addCallback(PreseedCallback(context)).build()
                 INSTANCE = instance
                 instance
             }
@@ -47,7 +52,10 @@ abstract class AppDatabase : RoomDatabase() {
         override fun onCreate(db: SupportSQLiteDatabase) {
             super.onCreate(db)
             CoroutineScope(Dispatchers.IO).launch {
-                val dao = getInstance(context).carDao()
+                val dbInstance = getInstance(context)
+                val carDao = dbInstance.carDao()
+                val usuarioDao = dbInstance.usuarioDao()
+
                 val initialCars = listOf(
                     CarEntity(brand = "Toyota", model = "Corolla 2023", pricePerDay = 45.0, status = CarStatus.DISPONIBLE, imageResName = "car_corolla"),
                     CarEntity(brand = "Nissan", model = "Sentra 2022", pricePerDay = 40.0, status = CarStatus.DISPONIBLE, imageResName = "car_sentra"),
@@ -58,7 +66,13 @@ abstract class AppDatabase : RoomDatabase() {
                     CarEntity(brand = "Chevrolet", model = "Aveo 2021", pricePerDay = 35.0, status = CarStatus.DISPONIBLE, imageResName = "car_aveo"),
                     CarEntity(brand = "Ford", model = "Ranger 2023", pricePerDay = 85.0, status = CarStatus.DISPONIBLE, imageResName = "car_ranger")
                 )
-                dao.insertAll(initialCars)
+                carDao.insertAll(initialCars)
+
+                val defaultUsers = listOf(
+                    UsuarioEntity(nombre = "Admin Recepción", correo = "admin@elveloz.com", contrasena = "1234", rol = RolUsuario.RECEPCIONISTA),
+                    UsuarioEntity(nombre = "Juan Cliente", correo = "cliente@gmail.com", contrasena = "1234", rol = RolUsuario.CLIENTE)
+                )
+                defaultUsers.forEach { usuarioDao.insertar(it) }
             }
         }
     }

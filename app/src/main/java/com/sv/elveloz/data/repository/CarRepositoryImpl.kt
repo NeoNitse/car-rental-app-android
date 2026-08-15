@@ -5,6 +5,7 @@ import com.sv.elveloz.data.local.dao.RentalDao
 import com.sv.elveloz.data.local.entity.RentalEntity
 import com.sv.elveloz.domain.model.CarStatus
 import com.sv.elveloz.domain.repository.CarRepository
+import kotlinx.coroutines.flow.Flow
 
 class CarRepositoryImpl(
     private val carDao: CarDao,
@@ -20,7 +21,7 @@ class CarRepositoryImpl(
 
     override suspend fun rentCar(rental: RentalEntity, carId: Int) {
         rentalDao.insert(rental)
-        carDao.updateStatus(carId, CarStatus.EN_PROCESO)
+        carDao.updateStatus(carId, CarStatus.PEND_APROBACION)
     }
 
     override suspend fun updateCarStatus(carId: Int, newStatus: CarStatus) {
@@ -28,7 +29,7 @@ class CarRepositoryImpl(
     }
 
     override suspend fun completeRental(rental: RentalEntity, carId: Int) {
-        rentalDao.update(rental.copy(isActive = false))
+        rentalDao.update(rental.copy(isActive = false, estado = "FINALIZADA"))
         carDao.updateStatus(carId, CarStatus.DISPONIBLE)
     }
 
@@ -36,4 +37,11 @@ class CarRepositoryImpl(
         rentalDao.delete(rental.id)
         carDao.updateStatus(carId, CarStatus.DISPONIBLE)
     }
+
+    override suspend fun updateRental(rental: RentalEntity) {
+        rentalDao.update(rental)
+    }
+
+    override fun getPendingRentals(): Flow<List<RentalEntity>> = 
+        rentalDao.obtenerSolicitudesPendientes()
 }

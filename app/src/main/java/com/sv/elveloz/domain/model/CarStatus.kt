@@ -4,5 +4,6 @@ enum class CarStatus {
     DISPONIBLE,
     PEND_APROBACION,
     EN_PROCESO,
-    EN_USO
+    EN_USO,
+    MANTENIMIENTO
 }

@@ -24,4 +24,6 @@ interface CarRepository {
     suspend fun updateRental(rental: RentalEntity)
 
     fun getPendingRentals(): Flow<List<RentalEntity>>
+
+    suspend fun addCar(car: CarEntity)
 }

@@ -38,7 +38,8 @@ class AppViewModelFactory(private val context: Context) : ViewModelProvider.Fact
                     cancelRentalUseCase = CancelRentalUseCase(repository),
                     aprobarReservaUseCase = AprobarReservaUseCase(repository),
                     rechazarReservaUseCase = RechazarReservaUseCase(repository),
-                    getPendingRentalsUseCase = { repository.getPendingRentals() }
+                    getPendingRentalsUseCase = { repository.getPendingRentals() },
+                    agregarVehiculoUseCase = com.sv.elveloz.domain.usecase.CasoUsoAgregarVehiculo(repository)
                 ) as T
             }
             modelClass.isAssignableFrom(ViewModelLogin::class.java) -> {

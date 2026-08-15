@@ -14,5 +14,8 @@ data class CarEntity(
     val model: String,
     val pricePerDay: Double,
     val status: CarStatus,
-    val imageResName: String
+    val imageResName: String,
+    val rating: Double = 5.0,
+    val location: String = "San Salvador, SV",
+    val imageUrl: String? = null
 )

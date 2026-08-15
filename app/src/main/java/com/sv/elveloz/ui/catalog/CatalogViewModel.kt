@@ -38,8 +38,33 @@ class CatalogViewModel(
     private val cancelRentalUseCase: CancelRentalUseCase,
     private val aprobarReservaUseCase: AprobarReservaUseCase,
     private val rechazarReservaUseCase: RechazarReservaUseCase,
-    private val getPendingRentalsUseCase: () -> Flow<List<RentalEntity>>
+    private val getPendingRentalsUseCase: () -> Flow<List<RentalEntity>>,
+    private val agregarVehiculoUseCase: com.sv.elveloz.domain.usecase.CasoUsoAgregarVehiculo
 ) : ViewModel() {
+
+    fun onAgregarVehiculo(marca: String, modelo: String, precio: Double, imagenUrl: String, ubicacion: String) {
+        viewModelScope.launch {
+            val nuevoVehiculo = CarEntity(
+                brand = marca,
+                model = modelo,
+                pricePerDay = precio,
+                status = CarStatus.DISPONIBLE,
+                imageResName = "car_placeholder", // Default res
+                imageUrl = imagenUrl,
+                location = ubicacion,
+                rating = 5.0
+            )
+            agregarVehiculoUseCase(nuevoVehiculo)
+        }
+    }
+
+    fun onMoverAMantenimiento() {
+        val detail = _rentalDetail.value ?: return
+        viewModelScope.launch {
+            updateCarStatusUseCase(detail.car.id, CarStatus.MANTENIMIENTO)
+            _rentalDetail.value = null
+        }
+    }
 
     var rolActual: RolUsuario = RolUsuario.CLIENTE
         set(value) {

@@ -20,4 +20,8 @@ interface CarRepository {
     suspend fun completeRental(rental: RentalEntity, carId: Int)
 
     suspend fun cancelRental(rental: RentalEntity, carId: Int)
+
+    suspend fun updateRental(rental: RentalEntity)
+
+    fun getPendingRentals(): Flow<List<RentalEntity>>
 }

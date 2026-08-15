@@ -6,8 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sv.elveloz.ui.AppViewModelFactory
-import com.sv.elveloz.ui.catalog.CatalogScreen
-import com.sv.elveloz.ui.catalog.CatalogViewModel
+import com.sv.elveloz.ui.NavegacionApp
 import com.sv.elveloz.ui.theme.ElVelozTheme
 
 class MainActivity : ComponentActivity() {
@@ -17,8 +16,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             ElVelozTheme {
                 val factory = AppViewModelFactory(applicationContext)
-                val catalogViewModel: CatalogViewModel = viewModel(factory = factory)
-                CatalogScreen(viewModel = catalogViewModel)
+                NavegacionApp(factory = factory)
             }
         }
     }

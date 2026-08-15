@@ -11,5 +11,6 @@ data class RentalEntity(
     val pickupDateMs: Long,
     val returnDateMs: Long,
     val totalCost: Double,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    val estado: String = "SOLICITADA" // SOLICITADA, APROBADA, FINALIZADA, RECHAZADA
 )

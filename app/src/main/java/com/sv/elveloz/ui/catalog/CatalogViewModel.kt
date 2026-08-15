@@ -11,13 +11,17 @@ import com.sv.elveloz.domain.usecase.GetActiveRentalUseCase
 import com.sv.elveloz.domain.usecase.GetCarsUseCase
 import com.sv.elveloz.domain.usecase.RentCarUseCase
 import com.sv.elveloz.domain.usecase.UpdateCarStatusUseCase
+import com.sv.elveloz.domain.usecase.CancelRentalUseCase
+import com.sv.elveloz.domain.usecase.AprobarReservaUseCase
+import com.sv.elveloz.domain.usecase.RechazarReservaUseCase
+import com.sv.elveloz.domain.model.RolUsuario
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import com.sv.elveloz.domain.usecase.CancelRentalUseCase
 
 data class RentalDetailUiState(
     val car: CarEntity,
@@ -31,8 +35,21 @@ class CatalogViewModel(
     private val getActiveRentalUseCase: GetActiveRentalUseCase,
     private val updateCarStatusUseCase: UpdateCarStatusUseCase,
     private val completeRentalUseCase: CompleteRentalUseCase,
-    private val cancelRentalUseCase: CancelRentalUseCase
+    private val cancelRentalUseCase: CancelRentalUseCase,
+    private val aprobarReservaUseCase: AprobarReservaUseCase,
+    private val rechazarReservaUseCase: RechazarReservaUseCase,
+    private val getPendingRentalsUseCase: () -> Flow<List<RentalEntity>>
 ) : ViewModel() {
+
+    var rolActual: RolUsuario = RolUsuario.CLIENTE
+        set(value) {
+            field = value
+            if (value == RolUsuario.CLIENTE) {
+                _filterStatus.value = "DISPONIBLE"
+            } else {
+                _filterStatus.value = "TODOS"
+            }
+        }
 
     private val _filterStatus = MutableStateFlow("TODOS")
     private val _searchQuery = MutableStateFlow("")
@@ -70,6 +87,13 @@ class CatalogViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = CatalogUiState(isLoading = true)
     )
+
+    val pendingRentals: StateFlow<List<RentalEntity>> = getPendingRentalsUseCase()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     val rentalDetail: StateFlow<RentalDetailUiState?> = _rentalDetail
 
@@ -115,10 +139,23 @@ class CatalogViewModel(
                 customerName = customerName,
                 pickupDateMs = pickupDateMs,
                 returnDateMs = returnDateMs,
-                totalCost = totalCost
+                totalCost = totalCost,
+                estado = "SOLICITADA"
             )
             rentCarUseCase(rental, car.id)
             _selectedCar.value = null
+        }
+    }
+
+    fun onApproveRental(rental: RentalEntity) {
+        viewModelScope.launch {
+            aprobarReservaUseCase(rental)
+        }
+    }
+
+    fun onRejectRental(rental: RentalEntity, carId: Int) {
+        viewModelScope.launch {
+            rechazarReservaUseCase(rental, carId)
         }
     }
 

@@ -442,6 +442,14 @@ private fun RentalDialog(car: CarEntity, onDismiss: () -> Unit, onConfirm: (Stri
     var showPickupPicker by remember { mutableStateOf(false) }
     var showReturnPicker by remember { mutableStateOf(false) }
 
+    val calculatedCost = remember(pickupDateMs, returnDateMs) {
+        if (pickupDateMs != null && returnDateMs != null) {
+            calculateCost(pickupDateMs!!, returnDateMs!!)
+        } else {
+            null
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Reservar ${car.brand} ${car.model}") },
@@ -450,7 +458,26 @@ private fun RentalDialog(car: CarEntity, onDismiss: () -> Unit, onConfirm: (Stri
                 OutlinedTextField(value = customerName, onValueChange = { customerName = it }, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
                 TextButton(onClick = { showPickupPicker = true }) { Text("Recogida: ${formatDate(pickupDateMs)}") }
                 TextButton(onClick = { showReturnPicker = true }) { Text("Entrega: ${formatDate(returnDateMs)}") }
-                errorMessage?.let { Text(it, color = Color.Red) }
+                
+                calculatedCost?.onSuccess { cost ->
+                    val format = NumberFormat.getCurrencyInstance(Locale.US)
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4))
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(text = "Resumen de Alquiler", fontSize = 12.sp, color = Color.Gray)
+                            Text(
+                                text = "Costo Total: ${format.format(cost)}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF166534)
+                            )
+                        }
+                    }
+                }
+
+                errorMessage?.let { Text(it, color = Color.Red, modifier = Modifier.padding(top = 8.dp)) }
             }
         },
         confirmButton = {

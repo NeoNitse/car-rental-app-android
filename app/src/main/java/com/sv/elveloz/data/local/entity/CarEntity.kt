@@ -1,18 +1,12 @@
 package com.sv.elveloz.data.local.entity
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import androidx.room.TypeConverters
-import com.sv.elveloz.data.local.Converters
 import com.sv.elveloz.domain.model.CarStatus
+import java.util.UUID
 
-@Entity(tableName = "cars")
-@TypeConverters(Converters::class)
 data class CarEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val brand: String,
-    val model: String,
-    val pricePerDay: Double,
-    val status: CarStatus,
-    val imageResName: String
+    var id: String = UUID.randomUUID().toString(),
+    var brand: String = "",
+    var model: String = "",
+    var pricePerDay: Double = 0.0,
+    var status: CarStatus = CarStatus.DISPONIBLE
 )

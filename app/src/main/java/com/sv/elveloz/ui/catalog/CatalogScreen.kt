@@ -1,4 +1,3 @@
-// Ruta: com.sv.elveloz/ui/catalog/CatalogScreen.kt
 package com.sv.elveloz.ui.catalog
 
 import androidx.compose.foundation.BorderStroke
@@ -22,19 +21,26 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -66,6 +72,8 @@ import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.material.icons.filled.CheckCircle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,7 +90,7 @@ fun CatalogScreen(
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = Color(0xFFF5F5F5) // Fondo gris muy claro para herramienta interna
+        containerColor = Color(0xFFF5F5F5)
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -109,17 +117,8 @@ fun CatalogScreen(
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
-                    Text(
-                        text = "Recepción",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = "El Veloz",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.Black
-                    )
+                    Text(text = "Recepción", fontSize = 12.sp, color = Color.Gray)
+                    Text(text = "El Veloz", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                 }
             }
 
@@ -161,7 +160,7 @@ fun CatalogScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 5. Inventario en Lista (Mejor para lectura del recepcionista)
+            // 5. Inventario en Lista
             Text(
                 text = "Estado del Inventario",
                 fontSize = 16.sp,
@@ -180,15 +179,18 @@ fun CatalogScreen(
                     modifier = Modifier.weight(1f)
                 )
             } else {
-                LazyColumn( // Cambiado a Lista vertical
+                LazyColumn(
                     contentPadding = PaddingValues(bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     modifier = Modifier.weight(1f)
                 ) {
                     items(uiState.cars, key = { it.id }) { car ->
-                        ReceptionistVehicleCard( // Nueva tarjeta horizontal
+                        ReceptionistVehicleCard(
                             car = car,
-                            onClick = { viewModel.onCarClicked(car) }
+                            onClick = { viewModel.onCarClicked(car) },
+                            onMaintenanceClick = { isGoingToWorkshop ->
+                                viewModel.setCarMaintenanceStatus(car.id, isGoingToWorkshop)
+                            }
                         )
                     }
                 }
@@ -196,7 +198,7 @@ fun CatalogScreen(
         }
     }
 
-    // --- DIALOGOS MANTENIDOS INTACTOS ---
+    // --- DIALOGOS ---
     uiState.selectedCar?.let { car ->
         RentalDialog(
             car = car,
@@ -219,34 +221,37 @@ fun CatalogScreen(
             onDismiss = { viewModel.onDismissDetail() },
             onMarkAsInUse = {
                 viewModel.onMarkAsInUse()
+                viewModel.onDismissDetail()
                 coroutineScope.launch { snackbarHostState.showSnackbar("Vehículo marcado como retirado") }
             },
             onCompleteRental = {
                 viewModel.onCompleteRental()
+                viewModel.onDismissDetail()
                 coroutineScope.launch { snackbarHostState.showSnackbar("Vehículo devuelto con éxito") }
             },
             onCancelRental = {
                 viewModel.onCancelRental()
+                viewModel.onDismissDetail()
                 coroutineScope.launch { snackbarHostState.showSnackbar("Reserva cancelada correctamente") }
             }
         )
     }
 }
 
-// ==============================================================================
-// NUEVA TARJETA B2B: Tarjeta Horizontal para Recepcionista
-// ==============================================================================
 @Composable
 private fun ReceptionistVehicleCard(
     car: CarEntity,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onMaintenanceClick: (Boolean) -> Unit
 ) {
     val format = NumberFormat.getCurrencyInstance(Locale.US)
     val formattedPrice = format.format(car.pricePerDay)
 
-    val isAvailable = car.status == CarStatus.DISPONIBLE
-    val alphaValue = if (isAvailable) 1f else 0.5f
+    val isAvailableOrMaintenance = car.status == CarStatus.DISPONIBLE || car.status == CarStatus.MANTENIMIENTO
+    val alphaValue = if (isAvailableOrMaintenance) 1f else 0.5f
+
+    var expanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier
@@ -262,7 +267,6 @@ private fun ReceptionistVehicleCard(
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icono del auto compacto a la izquierda
             Box(
                 modifier = Modifier
                     .size(50.dp)
@@ -280,7 +284,6 @@ private fun ReceptionistVehicleCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            // Información central: Marca, Modelo y Precio
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "${car.brand} ${car.model}",
@@ -298,15 +301,16 @@ private fun ReceptionistVehicleCard(
                 )
             }
 
-            // Badge de estado a la derecha (Siempre visible y opaco para lectura rápida)
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = getStatusColor(car.status).copy(alpha = 0.15f)
+                color = getStatusColor(car.status).copy(alpha = 0.15f),
+                modifier = Modifier.padding(end = 8.dp)
             ) {
                 val statusText = when (car.status) {
                     CarStatus.DISPONIBLE -> "Disponible"
                     CarStatus.EN_PROCESO -> "En Proceso"
                     CarStatus.EN_USO -> "En Uso"
+                    CarStatus.MANTENIMIENTO -> "En Taller"
                 }
                 Text(
                     text = statusText,
@@ -316,19 +320,50 @@ private fun ReceptionistVehicleCard(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
                 )
             }
+
+            if (car.status == CarStatus.DISPONIBLE || car.status == CarStatus.MANTENIMIENTO) {
+                Box {
+                    IconButton(onClick = { expanded = true }) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = "Opciones", tint = Color.Gray)
+                    }
+
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.background(Color.White)
+                    ) {
+                        if (car.status == CarStatus.DISPONIBLE) {
+                            DropdownMenuItem(
+                                text = { Text("Enviar a Taller", fontWeight = FontWeight.Medium, color = Color.Black) },
+                                leadingIcon = { Icon(Icons.Filled.Build, tint = Color(0xFFE53935), contentDescription = null) },
+                                onClick = {
+                                    expanded = false
+                                    onMaintenanceClick(true)
+                                }
+                            )
+                        } else {
+                            DropdownMenuItem(
+                                text = { Text("Marcar Reparado", fontWeight = FontWeight.Medium, color = Color.Black) },
+                                leadingIcon = { Icon(Icons.Filled.CheckCircle, tint = Color(0xFF4CAF50), contentDescription = null) },
+                                onClick = {
+                                    expanded = false
+                                    onMaintenanceClick(false)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
-
-// ==============================================================================
-// COMPONENTES AUXILIARES
-// ==============================================================================
 
 private fun getStatusColor(status: CarStatus): Color {
     return when (status) {
         CarStatus.DISPONIBLE -> Color(0xFF4CAF50)
         CarStatus.EN_PROCESO -> Color(0xFFFF9800)
         CarStatus.EN_USO -> Color(0xFF2196F3)
+        CarStatus.MANTENIMIENTO -> Color(0xFFE53935)
     }
 }
 
@@ -363,17 +398,8 @@ private fun StatItem(label: String, value: Int, color: Color, modifier: Modifier
                 .padding(vertical = 12.dp)
                 .fillMaxWidth()
         ) {
-            Text(
-                text = value.toString(),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = color
-            )
-            Text(
-                text = label,
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
+            Text(text = value.toString(), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = color)
+            Text(text = label, fontSize = 12.sp, color = Color.Gray)
         }
     }
 }
@@ -384,12 +410,10 @@ private fun FilterChipsRow(
     selectedFilter: String,
     onFilterSelected: (String) -> Unit
 ) {
-    val filters = listOf("TODOS", "DISPONIBLE", "EN_PROCESO", "EN_USO")
+    val filters = listOf("TODOS", "DISPONIBLE", "EN_PROCESO", "EN_USO", "MANTENIMIENTO")
     val labels = mapOf(
-        "TODOS" to "Todos (8)",
-        "DISPONIBLE" to "Disponibles",
-        "EN_PROCESO" to "En Proceso",
-        "EN_USO" to "En Uso"
+        "TODOS" to "Todos (8)", "DISPONIBLE" to "Disponibles",
+        "EN_PROCESO" to "En Proceso", "EN_USO" to "En Uso", "MANTENIMIENTO" to "En Taller"
     )
 
     LazyRow(
@@ -402,18 +426,15 @@ private fun FilterChipsRow(
                 onClick = { onFilterSelected(filter) },
                 label = { Text(labels[filter] ?: filter, fontWeight = FontWeight.SemiBold) },
                 shape = RoundedCornerShape(50),
-                // Aquí aplicamos los colores explícitos para forzar la visibilidad
                 colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
-                    containerColor = Color.White, // Fondo normal
-                    labelColor = Color.DarkGray, // Color de texto normal (¡Esto soluciona el texto invisible!)
-                    selectedContainerColor = Color(0xFF374151), // Fondo oscuro al seleccionar
-                    selectedLabelColor = Color.White // Texto blanco al seleccionar
+                    containerColor = Color.White,
+                    labelColor = Color.DarkGray,
+                    selectedContainerColor = Color(0xFF374151),
+                    selectedLabelColor = Color.White
                 ),
                 border = androidx.compose.material3.FilterChipDefaults.filterChipBorder(
-                    enabled = true,
-                    selected = selectedFilter == filter,
-                    borderColor = Color.LightGray,
-                    selectedBorderColor = Color.Transparent
+                    enabled = true, selected = selectedFilter == filter,
+                    borderColor = Color.LightGray, selectedBorderColor = Color.Transparent
                 )
             )
         }
@@ -423,30 +444,15 @@ private fun FilterChipsRow(
 @Composable
 fun EmptySearchState(searchQuery: String, modifier: Modifier = Modifier) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
+        modifier = modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            imageVector = Icons.Filled.DirectionsCar,
-            contentDescription = "Sin resultados",
-            modifier = Modifier.size(72.dp),
-            tint = Color.LightGray
-        )
+        Icon(Icons.Filled.DirectionsCar, contentDescription = null, modifier = Modifier.size(72.dp), tint = Color.LightGray)
         Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "No se encontraron vehículos",
-            style = MaterialTheme.typography.titleLarge,
-            color = Color.Black
-        )
+        Text(text = "No se encontraron vehículos", style = MaterialTheme.typography.titleLarge, color = Color.Black)
         if (searchQuery.isNotEmpty()) {
-            Text(
-                text = "No hay coincidencias para \"$searchQuery\"",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
+            Text(text = "No hay coincidencias para \"$searchQuery\"", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
         }
     }
 }
@@ -469,6 +475,18 @@ private fun RentalDetailDialog(
     val car = detail.car
     val rental = detail.rental
 
+    // Estados para Entrega (EN_PROCESO)
+    var checkLicense by remember { mutableStateOf(false) }
+    var checkDeposit by remember { mutableStateOf(false) }
+    var checkKeys by remember { mutableStateOf(false) }
+    val allDeliveryChecked = checkLicense && checkDeposit && checkKeys
+
+    // Estados para Devolución (EN_USO)
+    var checkFuel by remember { mutableStateOf(false) }
+    var checkDamage by remember { mutableStateOf(false) }
+    var checkKeysReturn by remember { mutableStateOf(false) }
+    val allReturnChecked = checkFuel && checkDamage && checkKeysReturn
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("${car.brand} ${car.model}") },
@@ -487,8 +505,45 @@ private fun RentalDetailDialog(
                     Text(
                         "Costo total: $formattedTotal",
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)
                     )
+
+                    // 1. CHECKLIST DE ENTREGA (Usando el nuevo diseño moderno)
+                    if (car.status == CarStatus.EN_PROCESO) {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text("Requisitos de Entrega:", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                ModernChecklistRow("Licencia verificada", checkLicense) { checkLicense = it }
+                                ModernChecklistRow("Depósito retenido", checkDeposit) { checkDeposit = it }
+                                ModernChecklistRow("Llaves entregadas", checkKeys) { checkKeys = it }
+                            }
+                        }
+                    }
+
+                    // 2. CHECKLIST DE DEVOLUCIÓN (NUEVO)
+                    if (car.status == CarStatus.EN_USO) {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = BorderStroke(1.dp, Color(0xFFE2E8F0)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text("Auditoría de Devolución:", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF1E293B))
+                                Spacer(modifier = Modifier.height(4.dp))
+
+                                ModernChecklistRow("Combustible verificado", checkFuel) { checkFuel = it }
+                                ModernChecklistRow("Inspección sin daños", checkDamage) { checkDamage = it }
+                                ModernChecklistRow("Llaves recibidas", checkKeysReturn) { checkKeysReturn = it }
+                            }
+                        }
+                    }
+
                 } else {
                     Text("No se encontró información de la reserva.")
                 }
@@ -497,14 +552,17 @@ private fun RentalDetailDialog(
         confirmButton = {
             when (car.status) {
                 CarStatus.EN_PROCESO -> {
-                    Button(onClick = onMarkAsInUse) {
-                        Text("Marcar como Retirado")
-                    }
+                    Button(
+                        onClick = onMarkAsInUse,
+                        enabled = allDeliveryChecked
+                    ) { Text("Aprobar Entrega") }
                 }
                 CarStatus.EN_USO -> {
-                    Button(onClick = onCompleteRental) {
-                        Text("Marcar como Devuelto")
-                    }
+                    Button(
+                        onClick = onCompleteRental,
+                        enabled = allReturnChecked,
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                    ) { Text("Finalizar y Liberar") }
                 }
                 else -> {}
             }
@@ -512,13 +570,9 @@ private fun RentalDetailDialog(
         dismissButton = {
             Row {
                 if (car.status == CarStatus.EN_PROCESO) {
-                    TextButton(onClick = onCancelRental) {
-                        Text("Cancelar Reserva", color = MaterialTheme.colorScheme.error)
-                    }
+                    TextButton(onClick = onCancelRental) { Text("Cancelar Reserva", color = MaterialTheme.colorScheme.error) }
                 }
-                TextButton(onClick = onDismiss) {
-                    Text("Cerrar")
-                }
+                TextButton(onClick = onDismiss) { Text("Cerrar") }
             }
         }
     )
@@ -531,12 +585,10 @@ private fun RentalStepper(status: CarStatus) {
         CarStatus.EN_PROCESO -> 0
         CarStatus.EN_USO -> 1
         CarStatus.DISPONIBLE -> 2
+        CarStatus.MANTENIMIENTO -> 2
     }
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         steps.forEachIndexed { index, label ->
             val isActive = index <= currentIndex
             val color = if (isActive) Color(0xFF4CAF50) else Color(0xFFBDBDBD)
@@ -548,16 +600,9 @@ private fun RentalStepper(status: CarStatus) {
                         .background(color.copy(alpha = if (isActive) 1f else 0.3f), shape = CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (isActive) {
-                        Box(modifier = Modifier.size(10.dp).background(Color.White, shape = CircleShape))
-                    }
+                    if (isActive) Box(modifier = Modifier.size(10.dp).background(Color.White, shape = CircleShape))
                 }
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = color,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
+                Text(text = label, style = MaterialTheme.typography.labelSmall, color = color, modifier = Modifier.padding(top = 4.dp))
             }
             if (index < steps.size - 1) {
                 Box(
@@ -596,66 +641,57 @@ private fun RentalDialog(
         text = {
             Column {
                 OutlinedTextField(
-                    value = customerName,
-                    onValueChange = { customerName = it },
-                    label = { Text("Nombre del cliente") },
-                    singleLine = true,
+                    value = customerName, onValueChange = { customerName = it },
+                    label = { Text("Nombre del cliente") }, singleLine = true,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                 )
 
                 Text("Fecha de recogida", style = MaterialTheme.typography.labelMedium)
                 OutlinedTextField(
-                    value = formatDate(pickupDateMs),
-                    onValueChange = {},
-                    readOnly = true,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).clickable {
-                        showPickupPicker = true
-                    },
+                    value = formatDate(pickupDateMs), onValueChange = {}, readOnly = true,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp).clickable { showPickupPicker = true },
                     enabled = false
                 )
 
                 Text("Fecha de entrega", style = MaterialTheme.typography.labelMedium)
                 OutlinedTextField(
-                    value = formatDate(returnDateMs),
-                    onValueChange = {},
-                    readOnly = true,
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).clickable {
-                        showReturnPicker = true
-                    },
+                    value = formatDate(returnDateMs), onValueChange = {}, readOnly = true,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).clickable { showReturnPicker = true },
                     enabled = false
                 )
 
-                errorMessage?.let {
-                    Text(text = it, color = MaterialTheme.colorScheme.error)
-                }
+                errorMessage?.let { Text(text = it, color = MaterialTheme.colorScheme.error) }
             }
         },
         confirmButton = {
             Button(onClick = {
+                errorMessage = null
                 val pickup = pickupDateMs
                 val returnD = returnDateMs
+
                 if (customerName.isBlank()) {
-                    errorMessage = "Ingresá el nombre del cliente"
+                    errorMessage = "Ingresa el nombre del cliente"
                     return@Button
                 }
                 if (pickup == null || returnD == null) {
-                    errorMessage = "Seleccioná ambas fechas"
+                    errorMessage = "Selecciona ambas fechas"
                     return@Button
                 }
+
                 val result = calculateCost(pickup, returnD)
                 if (result.isFailure) {
                     errorMessage = result.exceptionOrNull()?.message ?: "Fechas inválidas"
                     return@Button
                 }
+
                 onConfirm(customerName, pickup, returnD)
+                onDismiss()
             }) {
                 Text("Confirmar Reserva")
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
-            }
+            TextButton(onClick = onDismiss) { Text("Cancelar") }
         }
     )
 
@@ -669,12 +705,8 @@ private fun RentalDialog(
                     showPickupPicker = false
                 }) { Text("OK") }
             },
-            dismissButton = {
-                TextButton(onClick = { showPickupPicker = false }) { Text("Cancelar") }
-            }
-        ) {
-            DatePicker(state = state)
-        }
+            dismissButton = { TextButton(onClick = { showPickupPicker = false }) { Text("Cancelar") } }
+        ) { DatePicker(state = state) }
     }
 
     if (showReturnPicker) {
@@ -687,12 +719,47 @@ private fun RentalDialog(
                     showReturnPicker = false
                 }) { Text("OK") }
             },
-            dismissButton = {
-                TextButton(onClick = { showReturnPicker = false }) { Text("Cancelar") }
-            }
-        ) {
-            DatePicker(state = state)
-        }
+            dismissButton = { TextButton(onClick = { showReturnPicker = false }) { Text("Cancelar") } }
+        ) { DatePicker(state = state) }
     }
 }
 
+@Composable
+fun ModernChecklistRow(
+    text: String,
+    isChecked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    // Animaciones suaves para el fondo y el ícono al hacer clic
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isChecked) Color(0xFFE3F2FD) else Color.Transparent, label = "bg"
+    )
+    val iconColor by animateColorAsState(
+        targetValue = if (isChecked) Color(0xFF2196F3) else Color(0xFFCBD5E1), label = "icon"
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(backgroundColor)
+            .clickable { onCheckedChange(!isChecked) }
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Filled.CheckCircle,
+            contentDescription = null,
+            tint = iconColor,
+            modifier = Modifier.size(22.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = text,
+            fontSize = 14.sp,
+            fontWeight = if (isChecked) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (isChecked) Color(0xFF1E293B) else Color(0xFF64748B)
+        )
+    }
+}

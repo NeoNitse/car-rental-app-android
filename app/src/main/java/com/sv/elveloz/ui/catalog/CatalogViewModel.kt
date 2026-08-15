@@ -82,12 +82,18 @@ class CatalogViewModel(
     }
 
     fun onCarClicked(car: CarEntity) {
-        if (car.status == CarStatus.DISPONIBLE) {
-            _selectedCar.value = car
-        } else {
-            viewModelScope.launch {
-                val rental = getActiveRentalUseCase(car.id)
-                _rentalDetail.value = RentalDetailUiState(car, rental)
+        when (car.status) {
+            CarStatus.DISPONIBLE -> {
+                _selectedCar.value = car
+            }
+            CarStatus.EN_PROCESO, CarStatus.EN_USO -> {
+                viewModelScope.launch {
+                    val rental = getActiveRentalUseCase(carId = car.id.toInt())
+                    _rentalDetail.value = RentalDetailUiState(car, rental)
+                }
+            }
+            CarStatus.MANTENIMIENTO -> {
+
             }
         }
     }
@@ -117,7 +123,7 @@ class CatalogViewModel(
                 returnDateMs = returnDateMs,
                 totalCost = totalCost
             )
-            rentCarUseCase(rental, car.id)
+            rentCarUseCase(rental, car.id.toInt())
             _selectedCar.value = null
         }
     }
@@ -125,7 +131,7 @@ class CatalogViewModel(
     fun onMarkAsInUse() {
         val detail = _rentalDetail.value ?: return
         viewModelScope.launch {
-            updateCarStatusUseCase(detail.car.id, CarStatus.EN_USO)
+            updateCarStatusUseCase(detail.car.id.toInt(), CarStatus.EN_USO)
             _rentalDetail.value = null
         }
     }
@@ -134,17 +140,34 @@ class CatalogViewModel(
         val detail = _rentalDetail.value ?: return
         val rental = detail.rental ?: return
         viewModelScope.launch {
-            completeRentalUseCase(rental, detail.car.id)
+            completeRentalUseCase(rental, detail.car.id.toInt())
             _rentalDetail.value = null
         }
     }
 
     fun onCancelRental() {
-        val detail = _rentalDetail.value ?: return
-        val rental = detail.rental ?: return
+        val detail = _rentalDetail.value
         viewModelScope.launch {
-            cancelRentalUseCase(rental, detail.car.id)
+            if (detail != null) {
+
+                // 1. Cancelamos la renta enviando el objeto completo y el ID del auto
+                detail.rental?.let { rental ->
+                    cancelRentalUseCase(rental = rental, carId = detail.car.id.toInt())
+                }
+
+                // 2. Liberamos el auto forzando su estado a DISPONIBLE
+                updateCarStatusUseCase(detail.car.id.toInt(), CarStatus.DISPONIBLE)
+            }
+
+            // 3. Limpiamos la pantalla
             _rentalDetail.value = null
+            _selectedCar.value = null
+        }
+    }
+    fun setCarMaintenanceStatus(carId: String, isGoingToWorkshop: Boolean) {
+        viewModelScope.launch {
+            val newStatus = if (isGoingToWorkshop) CarStatus.MANTENIMIENTO else CarStatus.DISPONIBLE
+            updateCarStatusUseCase(carId.toInt(), newStatus)
         }
     }
 }

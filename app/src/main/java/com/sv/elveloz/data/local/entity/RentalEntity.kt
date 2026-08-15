@@ -1,15 +1,13 @@
 package com.sv.elveloz.data.local.entity
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
+import java.util.UUID
 
-@Entity(tableName = "rentals")
 data class RentalEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val carId: Int,
-    val customerName: String,
-    val pickupDateMs: Long,
-    val returnDateMs: Long,
-    val totalCost: Double,
-    val isActive: Boolean = true
+    var id: String = UUID.randomUUID().toString(),
+    var carId: String = "",
+    var customerName: String = "",
+    var pickupDateMs: Long = 0L,
+    var returnDateMs: Long = 0L,
+    var totalCost: Double = 0.0,
+    var isActive: Boolean = true
 )

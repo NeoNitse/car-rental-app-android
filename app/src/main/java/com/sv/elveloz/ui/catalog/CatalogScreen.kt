@@ -339,8 +339,8 @@ fun VehicleGridCard(car: CarEntity, onClick: () -> Unit) {
                         Text(
                             text = "Reservar",
                             color = Color.White,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                         )
                     }
                 }

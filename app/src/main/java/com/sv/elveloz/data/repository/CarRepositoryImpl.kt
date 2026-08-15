@@ -21,7 +21,7 @@ class CarRepositoryImpl(
 
     override suspend fun rentCar(rental: RentalEntity, carId: Int) {
         rentalDao.insert(rental)
-        carDao.updateStatus(carId, CarStatus.EN_PROCESO)
+        carDao.updateStatus(carId, CarStatus.PEND_APROBACION)
     }
 
     override suspend fun updateCarStatus(carId: Int, newStatus: CarStatus) {

@@ -142,7 +142,10 @@ fun CatalogScreen(
 
             // 3. Panel de Estadísticas
             if (rol == RolUsuario.RECEPCIONISTA) {
-                QuickStatsPanel(cars = uiState.allCars)
+                QuickStatsPanel(
+                    cars = uiState.allCars,
+                    onFilterSelected = { viewModel.onFilterChange(it) }
+                )
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
@@ -229,6 +232,14 @@ fun CatalogScreen(
             onCancelRental = {
                 viewModel.onCancelRental()
                 coroutineScope.launch { snackbarHostState.showSnackbar("Reserva cancelada correctamente") }
+            },
+            onApproveRental = { rental ->
+                viewModel.onApproveRental(rental)
+                coroutineScope.launch { snackbarHostState.showSnackbar("Reserva aprobada") }
+            },
+            onRejectRental = { rental, carId ->
+                viewModel.onRejectRental(rental, carId)
+                coroutineScope.launch { snackbarHostState.showSnackbar("Reserva rechazada") }
             }
         )
     }
@@ -313,6 +324,7 @@ private fun ReceptionistVehicleCard(
                 Text(
                     text = when (car.status) {
                         CarStatus.DISPONIBLE -> "Disponible"
+                        CarStatus.PEND_APROBACION -> "Pend. Aprobación"
                         CarStatus.EN_PROCESO -> "En Proceso"
                         CarStatus.EN_USO -> "En Uso"
                     },
@@ -326,16 +338,18 @@ private fun ReceptionistVehicleCard(
 
 private fun getStatusColor(status: CarStatus) = when (status) {
     CarStatus.DISPONIBLE -> Color(0xFF4CAF50)
+    CarStatus.PEND_APROBACION -> Color(0xFF9C27B0)
     CarStatus.EN_PROCESO -> Color(0xFFFF9800)
     CarStatus.EN_USO -> Color(0xFF2196F3)
 }
 
 @Composable
-private fun QuickStatsPanel(cars: List<CarEntity>) {
+private fun QuickStatsPanel(cars: List<CarEntity>, onFilterSelected: (String) -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        StatItem(label = "Disp.", value = cars.count { it.status == CarStatus.DISPONIBLE }, color = Color(0xFF4CAF50), modifier = Modifier.weight(1f))
-        StatItem(label = "Proc.", value = cars.count { it.status == CarStatus.EN_PROCESO }, color = Color(0xFFFF9800), modifier = Modifier.weight(1f))
-        StatItem(label = "En Uso", value = cars.count { it.status == CarStatus.EN_USO }, color = Color(0xFF2196F3), modifier = Modifier.weight(1f))
+        StatItem(label = "Disp.", value = cars.count { it.status == CarStatus.DISPONIBLE }, color = Color(0xFF4CAF50), modifier = Modifier.weight(1f).clickable { onFilterSelected("DISPONIBLE") })
+        StatItem(label = "Pend.", value = cars.count { it.status == CarStatus.PEND_APROBACION }, color = Color(0xFF9C27B0), modifier = Modifier.weight(1f).clickable { onFilterSelected("PEND_APROBACION") })
+        StatItem(label = "Proc.", value = cars.count { it.status == CarStatus.EN_PROCESO }, color = Color(0xFFFF9800), modifier = Modifier.weight(1f).clickable { onFilterSelected("EN_PROCESO") })
+        StatItem(label = "Uso", value = cars.count { it.status == CarStatus.EN_USO }, color = Color(0xFF2196F3), modifier = Modifier.weight(1f).clickable { onFilterSelected("EN_USO") })
     }
 }
 
@@ -352,13 +366,20 @@ private fun StatItem(label: String, value: Int, color: Color, modifier: Modifier
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterChipsRow(selectedFilter: String, onFilterSelected: (String) -> Unit) {
-    val filters = listOf("TODOS", "DISPONIBLE", "EN_PROCESO", "EN_USO")
+    val filters = listOf("TODOS", "DISPONIBLE", "PEND_APROBACION", "EN_PROCESO", "EN_USO")
     LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items(filters) { filter ->
             FilterChip(
                 selected = selectedFilter == filter,
                 onClick = { onFilterSelected(filter) },
-                label = { Text(filter) },
+                label = { 
+                    Text(when(filter) {
+                        "PEND_APROBACION" -> "Pendientes"
+                        "EN_PROCESO" -> "En Proceso"
+                        "EN_USO" -> "En Uso"
+                        else -> filter.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+                    }) 
+                },
                 colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF374151), selectedLabelColor = Color.White)
             )
         }
@@ -382,7 +403,7 @@ private fun formatDate(millis: Long?): String {
 }
 
 @Composable
-private fun RentalDetailDialog(detail: RentalDetailUiState, onDismiss: () -> Unit, onMarkAsInUse: () -> Unit, onCompleteRental: () -> Unit, onCancelRental: () -> Unit) {
+private fun RentalDetailDialog(detail: RentalDetailUiState, onDismiss: () -> Unit, onMarkAsInUse: () -> Unit, onCompleteRental: () -> Unit, onCancelRental: () -> Unit, onApproveRental: (RentalEntity) -> Unit, onRejectRental: (RentalEntity, Int) -> Unit) {
     val car = detail.car
     val rental = detail.rental
     AlertDialog(
@@ -397,16 +418,27 @@ private fun RentalDetailDialog(detail: RentalDetailUiState, onDismiss: () -> Uni
                     Text("Recogida: ${formatDate(rental.pickupDateMs)}")
                     Text("Entrega: ${formatDate(rental.returnDateMs)}")
                     Text("Costo: $${rental.totalCost}", fontWeight = FontWeight.Bold)
+                    Text("Estado: ${rental.estado}")
                 }
             }
         },
         confirmButton = {
-            if (car.status == CarStatus.EN_PROCESO) Button(onClick = onMarkAsInUse) { Text("Marcar como Retirado") }
-            else if (car.status == CarStatus.EN_USO) Button(onClick = onCompleteRental) { Text("Marcar como Devuelto") }
+            when (car.status) {
+                CarStatus.PEND_APROBACION -> {
+                    Button(onClick = { if (rental != null) onApproveRental(rental) }) { Text("Aprobar Reserva") }
+                }
+                CarStatus.EN_PROCESO -> Button(onClick = onMarkAsInUse) { Text("Marcar como Retirado") }
+                CarStatus.EN_USO -> Button(onClick = onCompleteRental) { Text("Marcar como Devuelto") }
+                else -> {}
+            }
         },
         dismissButton = {
             Row {
-                if (car.status == CarStatus.EN_PROCESO) TextButton(onClick = onCancelRental) { Text("Cancelar", color = Color.Red) }
+                if (car.status == CarStatus.PEND_APROBACION) {
+                    TextButton(onClick = { if (rental != null) onRejectRental(rental, car.id) }) { Text("Rechazar", color = Color.Red) }
+                } else if (car.status == CarStatus.EN_PROCESO) {
+                    TextButton(onClick = onCancelRental) { Text("Cancelar", color = Color.Red) }
+                }
                 TextButton(onClick = onDismiss) { Text("Cerrar") }
             }
         }
@@ -415,8 +447,13 @@ private fun RentalDetailDialog(detail: RentalDetailUiState, onDismiss: () -> Uni
 
 @Composable
 private fun RentalStepper(status: CarStatus) {
-    val steps = listOf("Reservado", "En Uso", "Devuelto")
-    val currentIndex = when (status) { CarStatus.EN_PROCESO -> 0; CarStatus.EN_USO -> 1; else -> 2 }
+    val steps = listOf("Solicitado", "Aprobado", "En Uso", "Devuelto")
+    val currentIndex = when (status) { 
+        CarStatus.PEND_APROBACION -> 0
+        CarStatus.EN_PROCESO -> 1
+        CarStatus.EN_USO -> 2
+        else -> 3 
+    }
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         steps.forEachIndexed { index, label ->
             val isActive = index <= currentIndex

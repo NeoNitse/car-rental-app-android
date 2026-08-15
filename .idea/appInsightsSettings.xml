@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.sv.elveloz" />
+                  <option name="mobileSdkAppId" value="1:482569855076:android:c563775d3750acab227f71" />
+                  <option name="projectId" value="app-de-renta" />
+                  <option name="projectNumber" value="482569855076" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

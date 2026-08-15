@@ -1,4 +1,4 @@
-// Ruta: com.sv.elveloz/ui/catalog/CatalogScreen.kt
+
 package com.sv.elveloz.ui.catalog
 
 import androidx.compose.foundation.BorderStroke
@@ -28,6 +28,7 @@ import com.sv.elveloz.data.local.entity.CarEntity
 import com.sv.elveloz.data.local.entity.RentalEntity
 import com.sv.elveloz.domain.model.CarStatus
 import com.sv.elveloz.domain.model.RolUsuario
+import com.sv.elveloz.ui.shared.ElVelozDateTimePickerDialog // <-- Importación de tu nuevo calendario
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -372,13 +373,13 @@ private fun FilterChipsRow(selectedFilter: String, onFilterSelected: (String) ->
             FilterChip(
                 selected = selectedFilter == filter,
                 onClick = { onFilterSelected(filter) },
-                label = { 
+                label = {
                     Text(when(filter) {
                         "PEND_APROBACION" -> "Pendientes"
                         "EN_PROCESO" -> "En Proceso"
                         "EN_USO" -> "En Uso"
                         else -> filter.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-                    }) 
+                    })
                 },
                 colors = FilterChipDefaults.filterChipColors(selectedContainerColor = Color(0xFF374151), selectedLabelColor = Color.White)
             )
@@ -448,11 +449,11 @@ private fun RentalDetailDialog(detail: RentalDetailUiState, onDismiss: () -> Uni
 @Composable
 private fun RentalStepper(status: CarStatus) {
     val steps = listOf("Solicitado", "Aprobado", "En Uso", "Devuelto")
-    val currentIndex = when (status) { 
+    val currentIndex = when (status) {
         CarStatus.PEND_APROBACION -> 0
         CarStatus.EN_PROCESO -> 1
         CarStatus.EN_USO -> 2
-        else -> 3 
+        else -> 3
     }
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         steps.forEachIndexed { index, label ->
@@ -475,10 +476,9 @@ private fun RentalDialog(car: CarEntity, onDismiss: () -> Unit, onConfirm: (Stri
     var customerName by remember { mutableStateOf("") }
     var pickupDateMs by remember { mutableStateOf<Long?>(null) }
     var returnDateMs by remember { mutableStateOf<Long?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var showPickupPicker by remember { mutableStateOf(false) }
-    var showReturnPicker by remember { mutableStateOf(false) }
+    var showPicker by remember { mutableStateOf(false) }
 
+    // Calcula el costo de forma dinámica
     val calculatedCost = remember(pickupDateMs, returnDateMs) {
         if (pickupDateMs != null && returnDateMs != null) {
             calculateCost(pickupDateMs!!, returnDateMs!!)
@@ -487,53 +487,134 @@ private fun RentalDialog(car: CarEntity, onDismiss: () -> Unit, onConfirm: (Stri
         }
     }
 
+    // Validación automática: ¿Están todos los campos llenos?
+    val isFormValid = customerName.isNotBlank() && pickupDateMs != null && returnDateMs != null
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Reservar ${car.brand} ${car.model}") },
+        containerColor = Color.White, // Elimina el tono lila y lo hace blanco puro
+        shape = RoundedCornerShape(24.dp),
+        title = {
+            Text("Reservar ${car.brand} ${car.model}", fontWeight = FontWeight.ExtraBold, color = Color.Black)
+        },
         text = {
             Column {
-                OutlinedTextField(value = customerName, onValueChange = { customerName = it }, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
-                TextButton(onClick = { showPickupPicker = true }) { Text("Recogida: ${formatDate(pickupDateMs)}") }
-                TextButton(onClick = { showReturnPicker = true }) { Text("Entrega: ${formatDate(returnDateMs)}") }
-                
-                calculatedCost?.onSuccess { cost ->
-                    val format = NumberFormat.getCurrencyInstance(Locale.US)
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4))
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(text = "Resumen de Alquiler", fontSize = 12.sp, color = Color.Gray)
+                // 1. Campo de Nombre Modernizado
+                OutlinedTextField(
+                    value = customerName,
+                    onValueChange = { customerName = it },
+                    label = { Text("Nombre del cliente", color = Color.Gray) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Black,
+                        unfocusedIndicatorColor = Color.LightGray,
+                        cursorColor = Color.Black
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 2. Botón Unificado de Fechas (Diseño limpio y centralizado)
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showPicker = true },
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, if (pickupDateMs == null) Color.LightGray else Color.Black),
+                    color = Color(0xFFFAFAFA)
+                ) {
+                    Box(modifier = Modifier.padding(16.dp), contentAlignment = Alignment.Center) {
+                        if (pickupDateMs != null && returnDateMs != null) {
                             Text(
-                                text = "Costo Total: ${format.format(cost)}",
-                                style = MaterialTheme.typography.titleMedium,
+                                text = "${formatDate(pickupDateMs)}   →   ${formatDate(returnDateMs)}",
+                                color = Color.Black,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF166534)
+                                fontSize = 14.sp
+                            )
+                        } else {
+                            Text(
+                                text = "Seleccionar recogida y entrega",
+                                color = Color.DarkGray,
+                                fontSize = 14.sp
                             )
                         }
                     }
                 }
 
-                errorMessage?.let { Text(it, color = Color.Red, modifier = Modifier.padding(top = 8.dp)) }
+                // 3. Resumen de Costo Minimalista (Adiós al color verde)
+                calculatedCost?.onSuccess { cost ->
+                    val format = NumberFormat.getCurrencyInstance(Locale.US)
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)), // Gris muy claro
+                        border = BorderStroke(1.dp, Color(0xFFE5E5E5))
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(text = "Resumen de Alquiler", fontSize = 12.sp, color = Color.Gray)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Costo Total", fontWeight = FontWeight.Medium, color = Color.Black)
+                                Text(
+                                    text = format.format(cost),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color.Black
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Esto solo saldrá si hay un error real de cálculo (ej. fechas invertidas)
+                calculatedCost?.onFailure { exception ->
+                    Text(
+                        text = exception.message ?: "Rango de fechas inválido",
+                        color = Color.Red,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
             }
         },
         confirmButton = {
-            Button(onClick = {
-                if (customerName.isBlank() || pickupDateMs == null || returnDateMs == null) { errorMessage = "Completa todo"; return@Button }
-                val result = calculateCost(pickupDateMs!!, returnDateMs!!)
-                if (result.isFailure) { errorMessage = result.exceptionOrNull()?.message; return@Button }
-                onConfirm(customerName, pickupDateMs!!, returnDateMs!!)
-            }) { Text("Confirmar") }
+            Button(
+                onClick = {
+                    if (isFormValid) {
+                        onConfirm(customerName, pickupDateMs!!, returnDateMs!!)
+                    }
+                },
+                enabled = isFormValid, // ¡La magia! Bloquea el botón hasta que esté todo lleno.
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Black,
+                    disabledContainerColor = Color(0xFFE0E0E0)
+                )
+            ) {
+                Text("Confirmar", color = if (isFormValid) Color.White else Color.Gray)
+            }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancelar", color = Color.Gray) }
+        }
     )
 
-    if (showPickupPicker) {
-        val state = rememberDatePickerState()
-        DatePickerDialog(onDismissRequest = { showPickupPicker = false }, confirmButton = { TextButton(onClick = { pickupDateMs = state.selectedDateMillis; showPickupPicker = false }) { Text("OK") } }) { DatePicker(state = state) }
-    }
-    if (showReturnPicker) {
-        val state = rememberDatePickerState()
-        DatePickerDialog(onDismissRequest = { showReturnPicker = false }, confirmButton = { TextButton(onClick = { returnDateMs = state.selectedDateMillis; showReturnPicker = false }) { Text("OK") } }) { DatePicker(state = state) }
+    if (showPicker) {
+        ElVelozDateTimePickerDialog(
+            onDismiss = { showPicker = false },
+            onConfirm = { startDate, endDate, startTime, endTime ->
+                pickupDateMs = startDate
+                returnDateMs = endDate
+                showPicker = false
+            }
+        )
     }
 }

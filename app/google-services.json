@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "482569855076",
+    "project_id": "app-de-renta",
+    "storage_bucket": "app-de-renta.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:482569855076:android:c563775d3750acab227f71",
+        "android_client_info": {
+          "package_name": "com.sv.elveloz"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBBYAaZ7c8VzGBTlbAy6uRaRNB3C6yOQmA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

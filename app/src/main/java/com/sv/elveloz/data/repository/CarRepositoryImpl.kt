@@ -2,6 +2,7 @@ package com.sv.elveloz.data.repository
 
 import com.sv.elveloz.data.local.dao.CarDao
 import com.sv.elveloz.data.local.dao.RentalDao
+import com.sv.elveloz.data.local.entity.CarEntity
 import com.sv.elveloz.data.local.entity.RentalEntity
 import com.sv.elveloz.domain.model.CarStatus
 import com.sv.elveloz.domain.repository.CarRepository
@@ -44,4 +45,8 @@ class CarRepositoryImpl(
 
     override fun getPendingRentals(): Flow<List<RentalEntity>> = 
         rentalDao.obtenerSolicitudesPendientes()
+
+    override suspend fun addCar(car: CarEntity) {
+        carDao.insertCar(car)
+    }
 }

@@ -10,9 +10,9 @@ import com.sv.elveloz.domain.model.CarStatus
 @TypeConverters(Converters::class)
 data class CarEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val brand: String,
-    val model: String,
-    val pricePerDay: Double,
-    val status: CarStatus,
-    val imageResName: String
+    val brand: String = "",
+    val model: String = "",
+    val pricePerDay: Double = 0.0,
+    val status: CarStatus = CarStatus.DISPONIBLE,
+    val imageResName: String = ""
 )

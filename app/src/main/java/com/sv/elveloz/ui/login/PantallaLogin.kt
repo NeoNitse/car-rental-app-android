@@ -11,12 +11,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
-import com.sv.elveloz.data.local.entity.UsuarioEntity
 
 @Composable
 fun PantallaLogin(
     viewModel: ViewModelLogin,
-    onLoginExitoso: (UsuarioEntity) -> Unit,
+    onLoginExitoso: (UserSession) -> Unit,
     onRegistrarseClick: () -> Unit
 ) {
     val estado by viewModel.estado.collectAsState()

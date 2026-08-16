@@ -149,13 +149,21 @@ class CatalogViewModel(
 
     fun onApproveRental(rental: RentalEntity) {
         viewModelScope.launch {
-            aprobarReservaUseCase(rental)
+            // FUERZA BRUTA: Cambiamos la palabra a APROBADA para que desaparezca del radar
+            val updatedRental = rental.copy(estado = "APROBADA", isActive = true)
+            aprobarReservaUseCase(updatedRental)
+            // Avanzamos el carro
+            updateCarStatusUseCase(rental.carId, CarStatus.EN_PROCESO)
         }
     }
 
     fun onRejectRental(rental: RentalEntity, carId: Int) {
         viewModelScope.launch {
-            rechazarReservaUseCase(rental, carId)
+            // FUERZA BRUTA: Cambiamos a RECHAZADA
+            val updatedRental = rental.copy(estado = "RECHAZADA", isActive = false)
+            rechazarReservaUseCase(updatedRental, carId)
+            // Liberamos el carro
+            updateCarStatusUseCase(carId, CarStatus.DISPONIBLE)
         }
     }
 
@@ -169,18 +177,28 @@ class CatalogViewModel(
 
     fun onCompleteRental() {
         val detail = _rentalDetail.value ?: return
-        val rental = detail.rental ?: return
+        val rental = detail.rental
         viewModelScope.launch {
-            completeRentalUseCase(rental, detail.car.id)
+            if (rental != null) {
+                completeRentalUseCase(rental, detail.car.id)
+            } else {
+                // EL SALVAVIDAS: Si el recibo no existe (Auto Huérfano), libera el auto de todas formas
+                updateCarStatusUseCase(detail.car.id, CarStatus.DISPONIBLE)
+            }
             _rentalDetail.value = null
         }
     }
 
     fun onCancelRental() {
         val detail = _rentalDetail.value ?: return
-        val rental = detail.rental ?: return
+        val rental = detail.rental
         viewModelScope.launch {
-            cancelRentalUseCase(rental, detail.car.id)
+            if (rental != null) {
+                cancelRentalUseCase(rental, detail.car.id)
+            } else {
+                // EL SALVAVIDAS
+                updateCarStatusUseCase(detail.car.id, CarStatus.DISPONIBLE)
+            }
             _rentalDetail.value = null
         }
     }

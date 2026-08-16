@@ -1,4 +1,3 @@
-
 package com.sv.elveloz.ui.catalog
 
 import androidx.compose.foundation.BorderStroke
@@ -22,13 +21,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sv.elveloz.data.local.entity.CarEntity
 import com.sv.elveloz.data.local.entity.RentalEntity
 import com.sv.elveloz.domain.model.CarStatus
 import com.sv.elveloz.domain.model.RolUsuario
-import com.sv.elveloz.ui.shared.ElVelozDateTimePickerDialog // <-- Importación de tu nuevo calendario
+import com.sv.elveloz.ui.shared.ElVelozDateTimePickerDialog
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -47,7 +47,6 @@ fun CatalogScreen(
     val pendingRentals by viewModel.pendingRentals.collectAsState()
     val rol = viewModel.rolActual
 
-    var showNotifications by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -56,145 +55,143 @@ fun CatalogScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = Color(0xFFF5F5F5)
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .padding(innerPadding)
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
+            item { Spacer(modifier = Modifier.height(8.dp)) }
 
             // 1. Header
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(Color.Black, shape = CircleShape),
-                    contentAlignment = Alignment.Center
+            item {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(Icons.Filled.DirectionsCar, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text = if (rol == RolUsuario.RECEPCIONISTA) "Recepción" else "Cliente",
-                        fontSize = 12.sp,
-                        color = Color.Gray
-                    )
-                    Text(
-                        text = "El Veloz",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.Black
-                    )
-                }
-
-                if (rol == RolUsuario.RECEPCIONISTA) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(Color.Black, shape = CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Filled.DirectionsCar, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(text = if (rol == RolUsuario.RECEPCIONISTA) "Recepción" else "Cliente", fontSize = 12.sp, color = Color.Gray)
+                        Text(text = "El Veloz", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                    }
                     Spacer(modifier = Modifier.weight(1f))
-                    Box {
-                        IconButton(onClick = { showNotifications = true }) {
-                            Icon(Icons.Default.Notifications, contentDescription = "Notificaciones")
-                        }
-                        if (pendingRentals.isNotEmpty()) {
-                            Badge(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(4.dp)
-                            ) {
-                                Text(pendingRentals.size.toString())
-                            }
-                        }
-                    }
-                    IconButton(onClick = onLogout) {
-                        Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar Sesión")
-                    }
-                } else {
-                    Spacer(modifier = Modifier.weight(1f))
-                    IconButton(onClick = onLogout) {
-                        Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar Sesión")
-                    }
+                    IconButton(onClick = onLogout) { Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar Sesión") }
                 }
             }
 
             // 2. Buscador
-            OutlinedTextField(
-                value = uiState.searchQuery,
-                onValueChange = { viewModel.onSearchQueryChange(it) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                placeholder = { Text("Buscar por marca o modelo...", color = Color.Gray) },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = Color.Gray) },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    cursorColor = Color.Black
+            item {
+                OutlinedTextField(
+                    value = uiState.searchQuery,
+                    onValueChange = { viewModel.onSearchQueryChange(it) },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Buscar por marca o modelo...", color = Color.Gray) },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = Color.Gray) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        cursorColor = Color.Black
+                    )
                 )
-            )
-
-            // 3. Panel de Estadísticas
-            if (rol == RolUsuario.RECEPCIONISTA) {
-                QuickStatsPanel(
-                    cars = uiState.allCars,
-                    onFilterSelected = { viewModel.onFilterChange(it) }
-                )
-                Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // 4. Filtros
+            // 3. ALERTAS EN VIVO (Acción Requerida)
+            if (rol == RolUsuario.RECEPCIONISTA && pendingRentals.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Acción Requerida (${pendingRentals.size})",
+                        fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFD32F2F)
+                    )
+                }
+                item {
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(pendingRentals, key = { it.id }) { rental ->
+                            val car = uiState.allCars.find { it.id == rental.carId }
+                            ActionRequiredCard(
+                                rental = rental,
+                                car = car,
+                                onApprove = {
+                                    viewModel.onApproveRental(rental)
+                                    coroutineScope.launch { snackbarHostState.showSnackbar("Reserva aprobada") }
+                                },
+                                onReject = {
+                                    viewModel.onRejectRental(rental, rental.carId)
+                                    coroutineScope.launch { snackbarHostState.showSnackbar("Reserva rechazada") }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // 4. Panel de Estadísticas
             if (rol == RolUsuario.RECEPCIONISTA) {
+                item {
+                    QuickStatsPanel(cars = uiState.allCars, onFilterSelected = { viewModel.onFilterChange(it) })
+                }
+            }
+
+            // 5. Filtros
+            if (rol == RolUsuario.RECEPCIONISTA) {
+                item {
+                    Text("Filtro de Flota", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.padding(bottom = 8.dp))
+                    FilterChipsRow(selectedFilter = uiState.filterStatus ?: "", onFilterSelected = { viewModel.onFilterChange(newFilter = it) })
+                }
+            }
+
+            // 6. Inventario Título
+            item {
                 Text(
-                    text = "Filtro de Flota",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    text = if (rol == RolUsuario.RECEPCIONISTA) "Catálogo de Vehículos" else "Vehículos Disponibles",
+                    fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black
                 )
-                FilterChipsRow(
-                    selectedFilter = uiState.filterStatus ?: "",
-                    onFilterSelected = { viewModel.onFilterChange(newFilter = it) }
-                )
-                Spacer(modifier = Modifier.height(24.dp))
             }
 
-            // 5. Inventario
-            Text(
-                text = if (rol == RolUsuario.RECEPCIONISTA) "Estado del Inventario" else "Vehículos Disponibles",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
+            // 7. Lista de Carros en Cuadrícula (2 Columnas estilo la imagen de referencia)
             if (uiState.isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color.Black)
+                item {
+                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color.Black)
+                    }
                 }
             } else if (uiState.cars.isEmpty()) {
-                EmptySearchState(
-                    searchQuery = uiState.searchQuery,
-                    modifier = Modifier.weight(1f)
-                )
+                item {
+                    EmptySearchState(searchQuery = uiState.searchQuery, modifier = Modifier.fillMaxWidth().height(200.dp))
+                }
             } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    items(uiState.cars, key = { it.id }) { car ->
-                        ReceptionistVehicleCard(
-                            car = car,
-                            onClick = { viewModel.onCarClicked(car) }
-                        )
+                items(uiState.cars.chunked(2), key = { rowCars -> rowCars.first().id }) { rowCars ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        rowCars.forEach { car ->
+                            Box(modifier = Modifier.weight(1f)) {
+                                CarGridCard(
+                                    car = car,
+                                    rol = rol,
+                                    onClick = { viewModel.onCarClicked(car) }
+                                )
+                            }
+                        }
+                        if (rowCars.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
                     }
                 }
             }
@@ -208,13 +205,11 @@ fun CatalogScreen(
             onConfirm = { customerName, pickupMs, returnMs ->
                 viewModel.onConfirmRental(customerName, pickupMs, returnMs)
                 coroutineScope.launch {
-                    val mensaje = if (rol == RolUsuario.RECEPCIONISTA) "Reserva registrada" else "Solicitud enviada"
+                    val mensaje = if (rol == RolUsuario.RECEPCIONISTA) "Reserva de mostrador registrada" else "Solicitud enviada al mostrador"
                     snackbarHostState.showSnackbar(mensaje)
                 }
             },
-            calculateCost = { pickupMs, returnMs ->
-                viewModel.calculateCost(pickupMs, returnMs, car.pricePerDay)
-            }
+            calculateCost = { pickupMs, returnMs -> viewModel.calculateCost(pickupMs, returnMs, car.pricePerDay) }
         )
     }
 
@@ -236,102 +231,166 @@ fun CatalogScreen(
             },
             onApproveRental = { rental ->
                 viewModel.onApproveRental(rental)
+                viewModel.onDismissDetail()
                 coroutineScope.launch { snackbarHostState.showSnackbar("Reserva aprobada") }
             },
             onRejectRental = { rental, carId ->
                 viewModel.onRejectRental(rental, carId)
+                viewModel.onDismissDetail()
                 coroutineScope.launch { snackbarHostState.showSnackbar("Reserva rechazada") }
-            }
-        )
-    }
-
-    if (showNotifications) {
-        AlertDialog(
-            onDismissRequest = { showNotifications = false },
-            title = { Text("Solicitudes Pendientes") },
-            text = {
-                if (pendingRentals.isEmpty()) {
-                    Text("No hay solicitudes nuevas.")
-                } else {
-                    LazyColumn(modifier = Modifier.heightIn(max = 400.dp)) {
-                        items(pendingRentals) { rental ->
-                            val car = uiState.allCars.find { it.id == rental.carId }
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White)
-                            ) {
-                                Column(modifier = Modifier.padding(8.dp)) {
-                                    Text(
-                                        text = "${car?.brand ?: "Vehículo"} ${car?.model ?: ""}",
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Text(text = "Cliente: ${rental.customerName}")
-                                    Text(text = "Monto: $${rental.totalCost}")
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.End
-                                    ) {
-                                        TextButton(onClick = { viewModel.onRejectRental(rental, rental.carId) }) {
-                                            Text("Rechazar", color = Color.Red)
-                                        }
-                                        Button(onClick = { viewModel.onApproveRental(rental) }) {
-                                            Text("Aprobar")
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showNotifications = false }) {
-                    Text("Cerrar")
-                }
             }
         )
     }
 }
 
+
 @Composable
-private fun ReceptionistVehicleCard(
+private fun CarGridCard(
     car: CarEntity,
-    modifier: Modifier = Modifier,
+    rol: RolUsuario,
     onClick: () -> Unit
 ) {
     val format = NumberFormat.getCurrencyInstance(Locale.US)
     val formattedPrice = format.format(car.pricePerDay)
     val isAvailable = car.status == CarStatus.DISPONIBLE
-    val alphaValue = if (isAvailable) 1f else 0.5f
+
+    val imageResId = when (car.imageResName.trim()) {
+        "toyota_corolla" -> com.sv.elveloz.R.drawable.toyota_corolla
+        "nissan_sentra" -> com.sv.elveloz.R.drawable.nissan_sentra
+        "honda_cr" -> com.sv.elveloz.R.drawable.honda_cr
+        "hyundai_tucson" -> com.sv.elveloz.R.drawable.hyundai_tucson
+        else -> 0
+    }
 
     Card(
-        modifier = modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(50.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFF3F4F6)), contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.DirectionsCar, contentDescription = null, modifier = Modifier.size(30.dp), tint = Color.Gray.copy(alpha = alphaValue))
+        Column(modifier = Modifier.padding(12.dp)) {
+            // Contenedor Visual de la Imagen
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(110.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFF3F4F6)),
+                contentAlignment = Alignment.Center
+            ) {
+                if (imageResId != 0) {
+                    // Si encontró la imagen mapeada, la muestra a pantalla completa
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(id = imageResId),
+                        contentDescription = "${car.brand} ${car.model}",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                } else {
+                    // Si no, muestra el ícono por defecto
+                    Icon(
+                        imageVector = Icons.Filled.DirectionsCar,
+                        contentDescription = null,
+                        modifier = Modifier.size(56.dp),
+                        tint = if (isAvailable) Color.DarkGray else Color.Gray.copy(alpha = 0.5f)
+                    )
+                }
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = "${car.brand} ${car.model}", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.Black.copy(alpha = alphaValue))
-                Text(text = "$formattedPrice / día", fontSize = 13.sp, color = Color.DarkGray.copy(alpha = alphaValue))
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Ya regresamos el texto a la normalidad
+            Text(
+                text = "${car.brand} ${car.model}",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.Black,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = when (car.status) {
+                    CarStatus.DISPONIBLE -> "Disponible"
+                    CarStatus.PEND_APROBACION -> "Pend. Aprobación"
+                    CarStatus.EN_PROCESO -> "En Proceso"
+                    CarStatus.EN_USO -> "En Uso"
+                },
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = getStatusColor(car.status)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = formattedPrice,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = "/ Día",
+                        fontSize = 10.sp,
+                        color = Color.Gray
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (isAvailable) Color(0xFF1F2937) else Color(0xFFE5E7EB)
+                ) {
+                    Box(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (isAvailable) "Reservar" else "Gestionar",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isAvailable) Color.White else Color.DarkGray
+                        )
+                    }
+                }
             }
-            Surface(shape = RoundedCornerShape(8.dp), color = getStatusColor(car.status).copy(alpha = 0.15f)) {
-                Text(
-                    text = when (car.status) {
-                        CarStatus.DISPONIBLE -> "Disponible"
-                        CarStatus.PEND_APROBACION -> "Pend. Aprobación"
-                        CarStatus.EN_PROCESO -> "En Proceso"
-                        CarStatus.EN_USO -> "En Uso"
-                    },
-                    fontSize = 11.sp, fontWeight = FontWeight.Bold, color = getStatusColor(car.status),
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
-                )
+        }
+    }
+}
+
+@Composable
+private fun ActionRequiredCard(rental: RentalEntity, car: CarEntity?, onApprove: () -> Unit, onReject: () -> Unit) {
+    Card(
+        modifier = Modifier.width(280.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+        border = BorderStroke(1.dp, Color(0xFFFFB74D)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Notifications, contentDescription = null, tint = Color(0xFFF57C00))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Nueva Solicitud", fontWeight = FontWeight.Bold, color = Color(0xFFF57C00))
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(text = "Vehículo: ${car?.brand ?: ""} ${car?.model ?: ""}", fontWeight = FontWeight.Bold, color = Color.Black)
+            Text(text = "Cliente: ${rental.customerName}", fontSize = 14.sp, color = Color.DarkGray)
+            Text(text = "Costo: $${rental.totalCost}", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.Black)
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onReject) { Text("Rechazar", color = Color.Red) }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = onApprove, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))) { Text("Aprobar") }
             }
         }
     }
@@ -389,7 +448,7 @@ private fun FilterChipsRow(selectedFilter: String, onFilterSelected: (String) ->
 
 @Composable
 fun EmptySearchState(searchQuery: String, modifier: Modifier = Modifier) {
-    Column(modifier = modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+    Column(modifier = modifier.padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         Icon(Icons.Filled.DirectionsCar, contentDescription = null, modifier = Modifier.size(72.dp), tint = Color.LightGray)
         Text(text = "No se encontraron vehículos", style = MaterialTheme.typography.titleLarge)
         if (searchQuery.isNotEmpty()) Text(text = "No hay coincidencias para \"$searchQuery\"", color = Color.Gray)
@@ -398,9 +457,7 @@ fun EmptySearchState(searchQuery: String, modifier: Modifier = Modifier) {
 
 private fun formatDate(millis: Long?): String {
     if (millis == null) return "Seleccionar"
-    return SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply {
-        timeZone = java.util.TimeZone.getTimeZone("UTC")
-    }.format(Date(millis))
+    return SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply { timeZone = java.util.TimeZone.getTimeZone("UTC") }.format(Date(millis))
 }
 
 @Composable
@@ -409,17 +466,22 @@ private fun RentalDetailDialog(detail: RentalDetailUiState, onDismiss: () -> Uni
     val rental = detail.rental
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("${car.brand} ${car.model}") },
+        containerColor = Color.White,
+        title = { Text("${car.brand} ${car.model}", color = Color.Black, fontWeight = FontWeight.Bold) },
         text = {
             Column {
                 RentalStepper(status = car.status)
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
                 if (rental != null) {
-                    Text("Cliente: ${rental.customerName}")
-                    Text("Recogida: ${formatDate(rental.pickupDateMs)}")
-                    Text("Entrega: ${formatDate(rental.returnDateMs)}")
-                    Text("Costo: $${rental.totalCost}", fontWeight = FontWeight.Bold)
-                    Text("Estado: ${rental.estado}")
+                    Text("Cliente: ${rental.customerName}", color = Color.Black)
+                    Text("Recogida: ${formatDate(rental.pickupDateMs)}", color = Color.DarkGray)
+                    Text("Entrega: ${formatDate(rental.returnDateMs)}", color = Color.DarkGray)
+                    Text("Costo: $${rental.totalCost}", fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                    Text("Estado: ${rental.estado}", color = Color.Black)
+                } else {
+                    Text("¡Aviso! Datos de reserva no encontrados (Historial borrado).", color = Color.Red, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("Puedes forzar la liberación del vehículo usando los botones de abajo.", color = Color.DarkGray, fontSize = 13.sp)
                 }
             }
         },
@@ -440,7 +502,7 @@ private fun RentalDetailDialog(detail: RentalDetailUiState, onDismiss: () -> Uni
                 } else if (car.status == CarStatus.EN_PROCESO) {
                     TextButton(onClick = onCancelRental) { Text("Cancelar", color = Color.Red) }
                 }
-                TextButton(onClick = onDismiss) { Text("Cerrar") }
+                TextButton(onClick = onDismiss) { Text("Cerrar", color = Color.Gray) }
             }
         }
     )
@@ -478,143 +540,68 @@ private fun RentalDialog(car: CarEntity, onDismiss: () -> Unit, onConfirm: (Stri
     var returnDateMs by remember { mutableStateOf<Long?>(null) }
     var showPicker by remember { mutableStateOf(false) }
 
-    // Calcula el costo de forma dinámica
     val calculatedCost = remember(pickupDateMs, returnDateMs) {
-        if (pickupDateMs != null && returnDateMs != null) {
-            calculateCost(pickupDateMs!!, returnDateMs!!)
-        } else {
-            null
-        }
+        if (pickupDateMs != null && returnDateMs != null) calculateCost(pickupDateMs!!, returnDateMs!!) else null
     }
 
-    // Validación automática: ¿Están todos los campos llenos?
     val isFormValid = customerName.isNotBlank() && pickupDateMs != null && returnDateMs != null
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color.White, // Elimina el tono lila y lo hace blanco puro
+        containerColor = Color.White,
         shape = RoundedCornerShape(24.dp),
-        title = {
-            Text("Reservar ${car.brand} ${car.model}", fontWeight = FontWeight.ExtraBold, color = Color.Black)
-        },
+        title = { Text("Reservar ${car.brand} ${car.model}", fontWeight = FontWeight.ExtraBold, color = Color.Black) },
         text = {
             Column {
-                // 1. Campo de Nombre Modernizado
                 OutlinedTextField(
-                    value = customerName,
-                    onValueChange = { customerName = it },
-                    label = { Text("Nombre del cliente", color = Color.Gray) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Black,
-                        unfocusedIndicatorColor = Color.LightGray,
-                        cursorColor = Color.Black
-                    )
+                    value = customerName, onValueChange = { customerName = it }, label = { Text("Nombre del cliente", color = Color.Gray) },
+                    modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(12.dp),
+                    colors = TextFieldDefaults.colors(focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent, focusedIndicatorColor = Color.Black, unfocusedIndicatorColor = Color.LightGray, cursorColor = Color.Black)
                 )
-
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // 2. Botón Unificado de Fechas (Diseño limpio y centralizado)
                 Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showPicker = true },
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, if (pickupDateMs == null) Color.LightGray else Color.Black),
-                    color = Color(0xFFFAFAFA)
+                    modifier = Modifier.fillMaxWidth().clickable { showPicker = true }, shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, if (pickupDateMs == null) Color.LightGray else Color.Black), color = Color(0xFFFAFAFA)
                 ) {
                     Box(modifier = Modifier.padding(16.dp), contentAlignment = Alignment.Center) {
                         if (pickupDateMs != null && returnDateMs != null) {
-                            Text(
-                                text = "${formatDate(pickupDateMs)}   →   ${formatDate(returnDateMs)}",
-                                color = Color.Black,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
+                            Text("${formatDate(pickupDateMs)}   →   ${formatDate(returnDateMs)}", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         } else {
-                            Text(
-                                text = "Seleccionar recogida y entrega",
-                                color = Color.DarkGray,
-                                fontSize = 14.sp
-                            )
+                            Text("Seleccionar recogida y entrega", color = Color.DarkGray, fontSize = 14.sp)
                         }
                     }
                 }
-
-                // 3. Resumen de Costo Minimalista (Adiós al color verde)
                 calculatedCost?.onSuccess { cost ->
                     val format = NumberFormat.getCurrencyInstance(Locale.US)
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)), // Gris muy claro
-                        border = BorderStroke(1.dp, Color(0xFFE5E5E5))
-                    ) {
+                    Card(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), shape = RoundedCornerShape(12.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)), border = BorderStroke(1.dp, Color(0xFFE5E5E5))) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text(text = "Resumen de Alquiler", fontSize = 12.sp, color = Color.Gray)
+                            Text("Resumen de Alquiler", fontSize = 12.sp, color = Color.Gray)
                             Spacer(modifier = Modifier.height(4.dp))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                                 Text("Costo Total", fontWeight = FontWeight.Medium, color = Color.Black)
-                                Text(
-                                    text = format.format(cost),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = Color.Black
-                                )
+                                Text(format.format(cost), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                             }
                         }
                     }
                 }
-
-                // Esto solo saldrá si hay un error real de cálculo (ej. fechas invertidas)
                 calculatedCost?.onFailure { exception ->
-                    Text(
-                        text = exception.message ?: "Rango de fechas inválido",
-                        color = Color.Red,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
+                    Text(exception.message ?: "Rango de fechas inválido", color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
                 }
             }
         },
         confirmButton = {
             Button(
-                onClick = {
-                    if (isFormValid) {
-                        onConfirm(customerName, pickupDateMs!!, returnDateMs!!)
-                    }
-                },
-                enabled = isFormValid, // ¡La magia! Bloquea el botón hasta que esté todo lleno.
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Black,
-                    disabledContainerColor = Color(0xFFE0E0E0)
-                )
-            ) {
-                Text("Confirmar", color = if (isFormValid) Color.White else Color.Gray)
-            }
+                onClick = { if (isFormValid) onConfirm(customerName, pickupDateMs!!, returnDateMs!!) }, enabled = isFormValid,
+                shape = RoundedCornerShape(12.dp), colors = ButtonDefaults.buttonColors(containerColor = Color.Black, disabledContainerColor = Color(0xFFE0E0E0))
+            ) { Text("Confirmar", color = if (isFormValid) Color.White else Color.Gray) }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar", color = Color.Gray) }
-        }
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar", color = Color.Gray) } }
     )
 
     if (showPicker) {
         ElVelozDateTimePickerDialog(
             onDismiss = { showPicker = false },
-            onConfirm = { startDate, endDate, startTime, endTime ->
-                pickupDateMs = startDate
-                returnDateMs = endDate
-                showPicker = false
-            }
+            onConfirm = { startDate, endDate, startTime, endTime -> pickupDateMs = startDate; returnDateMs = endDate; showPicker = false }
         )
     }
 }

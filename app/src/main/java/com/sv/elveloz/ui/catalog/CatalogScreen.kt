@@ -325,22 +325,34 @@ fun VehicleGridCard(car: CarEntity, onClick: () -> Unit) {
                 }
 
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "${format.format(car.pricePerDay)}/Day", fontWeight = FontWeight.ExtraBold, fontSize = 10.sp)
+                    Text(
+                        text = "${format.format(car.pricePerDay)}/Day",
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 11.sp,
+                        color = Color.Black, // Color explícito para evitar tintes del sistema
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1
+                    )
                     
                     Surface(
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(8.dp),
                         color = Color(0xFF008A30),
-                        modifier = Modifier.height(32.dp).clickable { onClick() }
+                        modifier = Modifier
+                            .wrapContentSize()
+                            .clickable { onClick() }
                     ) {
                         Text(
                             text = "Reservar",
                             color = Color.White,
-                            fontSize = 12.sp,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            maxLines = 1
                         )
                     }
                 }

@@ -364,12 +364,13 @@ fun CustomerCarCard(car: CarEntity, onCardClick: () -> Unit, onReserveClick: () 
                     .background(Color(0xFFF3F4F6)),
                 contentAlignment = Alignment.Center
             ) {
+                /*
                 Icon(
                     imageVector = Icons.Default.FavoriteBorder,
                     contentDescription = "Favorito",
                     tint = Color.Gray,
                     modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(20.dp)
-                )
+                ) */
 
                 if (imageResId != 0) {
                     Image(
@@ -390,22 +391,38 @@ fun CustomerCarCard(car: CarEntity, onCardClick: () -> Unit, onReserveClick: () 
             }
 
             Spacer(modifier = Modifier.height(10.dp))
-            Text(text = "${car.brand} ${car.model}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(text = "${car.brand} ${car.model}", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Color.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(modifier = Modifier.height(12.dp))
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = "$formattedPrice/Día", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "$formattedPrice/Día",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
 
                 Surface(
                     shape = RoundedCornerShape(10.dp),
                     color = if (isAvailable) Color(0xFF1F2937) else Color(0xFFE5E7EB),
-                    modifier = if (isAvailable) Modifier.clickable { onReserveClick() } else Modifier
+                    modifier = (if (isAvailable) Modifier.clickable { onReserveClick() } else Modifier)
+                        .wrapContentWidth()
                 ) {
-                    Box(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
                             text = if (isAvailable) "Reservar" else "No disponible",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isAvailable) Color.White else Color.Gray
+                            color = if (isAvailable) Color.White else Color.Gray,
+                            maxLines = 1
                         )
                     }
                 }
@@ -533,14 +550,27 @@ private fun CarGridCard(car: CarEntity, rol: RolUsuario, onClick: () -> Unit) {
                 fontSize = 11.sp, fontWeight = FontWeight.Medium, color = getStatusColor(car.status)
             )
             Spacer(modifier = Modifier.height(12.dp))
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(text = formattedPrice, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                     Text(text = "/ Día", fontSize = 10.sp, color = Color.Gray)
                 }
-                Surface(shape = RoundedCornerShape(10.dp), color = if (isAvailable) Color(0xFF1F2937) else Color(0xFFE5E7EB)) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (isAvailable) Color(0xFF1F2937) else Color(0xFFE5E7EB),
+                    modifier = Modifier.wrapContentWidth()
+                ) {
                     Box(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
-                        Text(text = if (isAvailable) "Reservar" else "Gestionar", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isAvailable) Color.White else Color.DarkGray)
+                        Text(
+                            text = if (isAvailable) "Reservar" else "Gestionar",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isAvailable) Color.White else Color.DarkGray,
+                            maxLines = 1
+                        )
                     }
                 }
             }

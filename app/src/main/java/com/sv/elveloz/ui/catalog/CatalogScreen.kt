@@ -77,9 +77,6 @@ fun CatalogScreen(
         ) {
             item { Spacer(modifier = Modifier.height(8.dp)) }
 
-            // =========================================================
-            // HEADER (Recepción vs Cliente)
-            // =========================================================
             if (rol == RolUsuario.RECEPCIONISTA) {
                 item {
                     Row(
@@ -160,9 +157,6 @@ fun CatalogScreen(
                 item { Text(text = "Recomendado para ti", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.padding(bottom = 4.dp)) }
             }
 
-            // =========================================================
-            // PANELES RECEPCIÓN
-            // =========================================================
             if (rol == RolUsuario.RECEPCIONISTA && pendingRentals.isNotEmpty()) {
                 item { Text(text = "Acción Requerida (${pendingRentals.size})", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFD32F2F)) }
                 item {
@@ -188,9 +182,6 @@ fun CatalogScreen(
                 item { Text(text = "Catálogo de Vehículos", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black) }
             }
 
-            // =========================================================
-            // LISTA DE CARROS
-            // =========================================================
             val displayCars = if (rol == RolUsuario.CLIENTE && selectedBrand != "Todos") {
                 uiState.cars.filter { it.brand.equals(selectedBrand, ignoreCase = true) }
             } else {
@@ -223,10 +214,6 @@ fun CatalogScreen(
             }
         }
     }
-
-    // =========================================================
-    // POPUPS
-    // =========================================================
 
     carDetailsToShow?.let { car ->
         CarDetailsDialog(
@@ -284,10 +271,6 @@ fun CatalogScreen(
         )
     }
 }
-
-// =====================================================================
-// COMPONENTES PREMIUM CLIENTE
-// =====================================================================
 
 @Composable
 fun TopSearchBar(searchQuery: String, onSearchChange: (String) -> Unit) {
@@ -366,7 +349,6 @@ fun CustomerCarCard(car: CarEntity, onCardClick: () -> Unit, onReserveClick: () 
     }
 
     Card(
-        // El clic general de la tarjeta sigue funcionando para ver detalles
         modifier = Modifier.fillMaxWidth().clickable { onCardClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -395,7 +377,6 @@ fun CustomerCarCard(car: CarEntity, onCardClick: () -> Unit, onReserveClick: () 
                         contentDescription = "${car.brand} ${car.model}",
                         modifier = Modifier.fillMaxSize().padding(12.dp),
                         contentScale = ContentScale.Fit,
-                        // CONDICIÓN: Baja la opacidad a 40% (0.4f) si no está disponible
                         alpha = if (isAvailable) 1f else 0.4f
                     )
                 } else {
@@ -414,7 +395,6 @@ fun CustomerCarCard(car: CarEntity, onCardClick: () -> Unit, onReserveClick: () 
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Text(text = "$formattedPrice/Día", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
 
-                // CONDICIÓN DEL BOTÓN: Gris y deshabilitado si no está disponible
                 Surface(
                     shape = RoundedCornerShape(10.dp),
                     color = if (isAvailable) Color(0xFF1F2937) else Color(0xFFE5E7EB),
@@ -422,7 +402,6 @@ fun CustomerCarCard(car: CarEntity, onCardClick: () -> Unit, onReserveClick: () 
                 ) {
                     Box(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
                         Text(
-                            // CONDICIÓN DEL TEXTO: Reemplazado por "No disponible"
                             text = if (isAvailable) "Reservar" else "No disponible",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
@@ -482,7 +461,6 @@ fun CarDetailsDialog(car: CarEntity, onDismiss: () -> Unit, onReserve: () -> Uni
                 Text(text = "${car.brand} ${car.model}", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // NUEVA FILA DE SPECS COMPACTA (Usando Emojis como íconos para no instalar dependencias extra)
                 Row(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     modifier = Modifier.fillMaxWidth().background(Color(0xFFF3F4F6), RoundedCornerShape(12.dp)).padding(12.dp)
@@ -512,11 +490,6 @@ fun CarDetailsDialog(car: CarEntity, onDismiss: () -> Unit, onReserve: () -> Uni
         }
     )
 }
-
-// =====================================================================
-// COMPONENTES DE RECEPCIÓN
-// =====================================================================
-// (El resto del código sigue intacto para tu compañero)
 
 @Composable
 private fun CarGridCard(car: CarEntity, rol: RolUsuario, onClick: () -> Unit) {

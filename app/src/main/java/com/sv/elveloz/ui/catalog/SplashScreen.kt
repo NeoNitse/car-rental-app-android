@@ -87,7 +87,6 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
                 fontSize = 32.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Color.White,
-                // Aquí le decimos que controle su opacidad
                 modifier = Modifier.alpha(alpha)
             )
         }

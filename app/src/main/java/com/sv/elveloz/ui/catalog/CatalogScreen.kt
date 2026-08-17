@@ -159,7 +159,7 @@ fun CatalogScreen(
                             Icon(Icons.Filled.DirectionsCar, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
                         }
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(text = "El Veloz", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                        Text(text = "Horizon Rides", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                         Spacer(modifier = Modifier.weight(1f))
 
                         Box(

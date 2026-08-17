@@ -14,6 +14,7 @@ import com.sv.elveloz.domain.usecase.RentCarUseCase
 import com.sv.elveloz.domain.usecase.UpdateCarStatusUseCase
 import com.sv.elveloz.domain.usecase.AprobarReservaUseCase
 import com.sv.elveloz.domain.usecase.RechazarReservaUseCase
+import com.sv.elveloz.domain.usecase.CasoUsoAgregarVehiculo
 import com.sv.elveloz.ui.catalog.CatalogViewModel
 import com.sv.elveloz.ui.login.ViewModelLogin
 import com.sv.elveloz.ui.login.ViewModelRegistro
@@ -41,7 +42,8 @@ class AppViewModelFactory(private val context: Context) : ViewModelProvider.Fact
                         cancelRentalUseCase = CancelRentalUseCase(repository),
                         aprobarReservaUseCase = AprobarReservaUseCase(repository),
                         rechazarReservaUseCase = RechazarReservaUseCase(repository),
-                        getPendingRentalsUseCase = { repository.getPendingRentals() }
+                        getPendingRentalsUseCase = { repository.getPendingRentals() },
+                        agregarVehiculoUseCase = CasoUsoAgregarVehiculo(repository)
                     ) as T
                 }
                 modelClass.isAssignableFrom(ViewModelLogin::class.java) -> {

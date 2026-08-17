@@ -1,7 +1,9 @@
 package com.sv.elveloz.ui.catalog
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,6 +14,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -20,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -47,6 +53,12 @@ fun CatalogScreen(
     val pendingRentals by viewModel.pendingRentals.collectAsState()
     val rol = viewModel.rolActual
 
+    var selectedBrand by remember { mutableStateOf("Todos") }
+    var showCustomerNotifications by remember { mutableStateOf(false) }
+    var carDetailsToShow by remember { mutableStateOf<CarEntity?>(null) }
+
+    val notificacionesCliente = uiState.allCars.filter { it.status == CarStatus.EN_PROCESO }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -65,149 +77,197 @@ fun CatalogScreen(
         ) {
             item { Spacer(modifier = Modifier.height(8.dp)) }
 
-            // 1. Header
-            item {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .background(Color.Black, shape = CircleShape),
-                        contentAlignment = Alignment.Center
+            // =========================================================
+            // HEADER (Recepción vs Cliente)
+            // =========================================================
+            if (rol == RolUsuario.RECEPCIONISTA) {
+                item {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Filled.DirectionsCar, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                        Box(
+                            modifier = Modifier.size(40.dp).background(Color.Black, shape = CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Filled.DirectionsCar, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(text = "Recepción", fontSize = 12.sp, color = Color.Gray)
+                            Text(text = "El Veloz", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        IconButton(onClick = onLogout) { Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar Sesión") }
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(text = if (rol == RolUsuario.RECEPCIONISTA) "Recepción" else "Cliente", fontSize = 12.sp, color = Color.Gray)
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = uiState.searchQuery,
+                        onValueChange = { viewModel.onSearchQueryChange(it) },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Buscar por marca o modelo...", color = Color.Gray) },
+                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = Color.Gray) },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
+                            focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
+                            cursorColor = Color.Black
+                        )
+                    )
+                }
+            } else {
+                item {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
+                    ) {
+                        Box(modifier = Modifier.size(44.dp).background(Color.Black, shape = CircleShape), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.DirectionsCar, contentDescription = null, tint = Color.White, modifier = Modifier.size(24.dp))
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
                         Text(text = "El Veloz", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                        Spacer(modifier = Modifier.weight(1f))
+
+                        Box(
+                            modifier = Modifier.size(44.dp).border(1.dp, Color(0xFFE5E7EB), CircleShape).clickable { showCustomerNotifications = true },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Filled.Notifications, contentDescription = "Notificaciones", tint = Color.Black, modifier = Modifier.size(22.dp))
+                            if (notificacionesCliente.isNotEmpty()) {
+                                Box(
+                                    modifier = Modifier.align(Alignment.TopEnd).offset(x = (-4).dp, y = 4.dp).size(16.dp).background(Color(0xFF4B5563), CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(text = notificacionesCliente.size.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Image(
+                            painter = painterResource(id = com.sv.elveloz.R.drawable.perfil),
+                            contentDescription = "Cerrar Sesión",
+                            modifier = Modifier.size(44.dp).clip(CircleShape).clickable { onLogout() },
+                            contentScale = ContentScale.Crop
+                        )
                     }
-                    Spacer(modifier = Modifier.weight(1f))
-                    IconButton(onClick = onLogout) { Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar Sesión") }
                 }
+
+                item { TopSearchBar(searchQuery = uiState.searchQuery, onSearchChange = { viewModel.onSearchQueryChange(it) }) }
+                item { BrandFilterRow(selectedBrand = selectedBrand, onBrandSelected = { selectedBrand = it }) }
+                item { Text(text = "Recomendado para ti", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.padding(bottom = 4.dp)) }
             }
 
-            // 2. Buscador
-            item {
-                OutlinedTextField(
-                    value = uiState.searchQuery,
-                    onValueChange = { viewModel.onSearchQueryChange(it) },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Buscar por marca o modelo...", color = Color.Gray) },
-                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null, tint = Color.Gray) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        cursorColor = Color.Black
-                    )
-                )
-            }
-
-            // 3. ALERTAS EN VIVO (Acción Requerida)
+            // =========================================================
+            // PANELES RECEPCIÓN
+            // =========================================================
             if (rol == RolUsuario.RECEPCIONISTA && pendingRentals.isNotEmpty()) {
+                item { Text(text = "Acción Requerida (${pendingRentals.size})", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFD32F2F)) }
                 item {
-                    Text(
-                        text = "Acción Requerida (${pendingRentals.size})",
-                        fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFD32F2F)
-                    )
-                }
-                item {
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         items(pendingRentals, key = { it.id }) { rental ->
                             val car = uiState.allCars.find { it.id == rental.carId }
                             ActionRequiredCard(
-                                rental = rental,
-                                car = car,
-                                onApprove = {
-                                    viewModel.onApproveRental(rental)
-                                    coroutineScope.launch { snackbarHostState.showSnackbar("Reserva aprobada") }
-                                },
-                                onReject = {
-                                    viewModel.onRejectRental(rental, rental.carId)
-                                    coroutineScope.launch { snackbarHostState.showSnackbar("Reserva rechazada") }
-                                }
+                                rental = rental, car = car,
+                                onApprove = { viewModel.onApproveRental(rental); coroutineScope.launch { snackbarHostState.showSnackbar("Reserva aprobada") } },
+                                onReject = { viewModel.onRejectRental(rental, rental.carId); coroutineScope.launch { snackbarHostState.showSnackbar("Reserva rechazada") } }
                             )
                         }
                     }
                 }
             }
 
-            // 4. Panel de Estadísticas
             if (rol == RolUsuario.RECEPCIONISTA) {
-                item {
-                    QuickStatsPanel(cars = uiState.allCars, onFilterSelected = { viewModel.onFilterChange(it) })
-                }
-            }
-
-            // 5. Filtros
-            if (rol == RolUsuario.RECEPCIONISTA) {
+                item { QuickStatsPanel(cars = uiState.allCars, onFilterSelected = { viewModel.onFilterChange(it) }) }
                 item {
                     Text("Filtro de Flota", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.padding(bottom = 8.dp))
                     FilterChipsRow(selectedFilter = uiState.filterStatus ?: "", onFilterSelected = { viewModel.onFilterChange(newFilter = it) })
                 }
+                item { Text(text = "Catálogo de Vehículos", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black) }
             }
 
-            // 6. Inventario Título
-            item {
-                Text(
-                    text = if (rol == RolUsuario.RECEPCIONISTA) "Catálogo de Vehículos" else "Vehículos Disponibles",
-                    fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black
-                )
-            }
-
-            // 7. Lista de Carros en Cuadrícula (2 Columnas estilo la imagen de referencia)
-            if (uiState.isLoading) {
-                item {
-                    Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color.Black)
-                    }
-                }
-            } else if (uiState.cars.isEmpty()) {
-                item {
-                    EmptySearchState(searchQuery = uiState.searchQuery, modifier = Modifier.fillMaxWidth().height(200.dp))
-                }
+            // =========================================================
+            // LISTA DE CARROS
+            // =========================================================
+            val displayCars = if (rol == RolUsuario.CLIENTE && selectedBrand != "Todos") {
+                uiState.cars.filter { it.brand.equals(selectedBrand, ignoreCase = true) }
             } else {
-                items(uiState.cars.chunked(2), key = { rowCars -> rowCars.first().id }) { rowCars ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
+                uiState.cars
+            }
+
+            if (uiState.isLoading) {
+                item { Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Color.Black) } }
+            } else if (displayCars.isEmpty()) {
+                item { EmptySearchState(searchQuery = uiState.searchQuery, modifier = Modifier.fillMaxWidth().height(200.dp)) }
+            } else {
+                items(displayCars.chunked(2), key = { rowCars -> rowCars.first().id }) { rowCars ->
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         rowCars.forEach { car ->
                             Box(modifier = Modifier.weight(1f)) {
-                                CarGridCard(
-                                    car = car,
-                                    rol = rol,
-                                    onClick = { viewModel.onCarClicked(car) }
-                                )
+                                if (rol == RolUsuario.CLIENTE) {
+                                    CustomerCarCard(
+                                        car = car,
+                                        onCardClick = { carDetailsToShow = car },
+                                        onReserveClick = { viewModel.onCarClicked(car) }
+                                    )
+                                } else {
+                                    CarGridCard(car = car, rol = rol, onClick = { viewModel.onCarClicked(car) })
+                                }
                             }
                         }
-                        if (rowCars.size == 1) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
+                        if (rowCars.size == 1) Spacer(modifier = Modifier.weight(1f))
                     }
                 }
             }
         }
     }
 
+    // =========================================================
+    // POPUPS
+    // =========================================================
+
+    carDetailsToShow?.let { car ->
+        CarDetailsDialog(
+            car = car,
+            onDismiss = { carDetailsToShow = null },
+            onReserve = {
+                carDetailsToShow = null
+                viewModel.onCarClicked(car)
+            }
+        )
+    }
+
+    if (showCustomerNotifications) {
+        AlertDialog(
+            onDismissRequest = { showCustomerNotifications = false },
+            containerColor = Color.White, shape = RoundedCornerShape(20.dp),
+            title = { Text("Notificaciones", fontWeight = FontWeight.Bold, color = Color.Black) },
+            text = {
+                if (notificacionesCliente.isNotEmpty()) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("¡Buenas noticias! Tienes reservas aprobadas:", color = Color(0xFF4CAF50), fontWeight = FontWeight.Medium)
+                        notificacionesCliente.forEach { car ->
+                            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F4F6)), modifier = Modifier.fillMaxWidth()) {
+                                Text("Tu ${car.brand} ${car.model} está listo para ser retirado en sucursal.", modifier = Modifier.padding(12.dp), fontSize = 13.sp, color = Color.Black)
+                            }
+                        }
+                    }
+                } else {
+                    Text("No tienes notificaciones nuevas por el momento.", color = Color.Gray)
+                }
+            },
+            confirmButton = { TextButton(onClick = { showCustomerNotifications = false }) { Text("Cerrar", color = Color.Black, fontWeight = FontWeight.Bold) } }
+        )
+    }
+
     uiState.selectedCar?.let { car ->
         RentalDialog(
-            car = car,
-            onDismiss = { viewModel.onDismissDialog() },
+            car = car, onDismiss = { viewModel.onDismissDialog() },
             onConfirm = { customerName, pickupMs, returnMs ->
                 viewModel.onConfirmRental(customerName, pickupMs, returnMs)
-                coroutineScope.launch {
-                    val mensaje = if (rol == RolUsuario.RECEPCIONISTA) "Reserva de mostrador registrada" else "Solicitud enviada al mostrador"
-                    snackbarHostState.showSnackbar(mensaje)
-                }
+                coroutineScope.launch { snackbarHostState.showSnackbar(if (rol == RolUsuario.RECEPCIONISTA) "Reserva de mostrador registrada" else "Solicitud enviada al mostrador") }
             },
             calculateCost = { pickupMs, returnMs -> viewModel.calculateCost(pickupMs, returnMs, car.pricePerDay) }
         )
@@ -215,41 +275,80 @@ fun CatalogScreen(
 
     rentalDetail?.let { detail ->
         RentalDetailDialog(
-            detail = detail,
-            onDismiss = { viewModel.onDismissDetail() },
-            onMarkAsInUse = {
-                viewModel.onMarkAsInUse()
-                coroutineScope.launch { snackbarHostState.showSnackbar("Vehículo marcado como retirado") }
-            },
-            onCompleteRental = {
-                viewModel.onCompleteRental()
-                coroutineScope.launch { snackbarHostState.showSnackbar("Vehículo devuelto con éxito") }
-            },
-            onCancelRental = {
-                viewModel.onCancelRental()
-                coroutineScope.launch { snackbarHostState.showSnackbar("Reserva cancelada correctamente") }
-            },
-            onApproveRental = { rental ->
-                viewModel.onApproveRental(rental)
-                viewModel.onDismissDetail()
-                coroutineScope.launch { snackbarHostState.showSnackbar("Reserva aprobada") }
-            },
-            onRejectRental = { rental, carId ->
-                viewModel.onRejectRental(rental, carId)
-                viewModel.onDismissDetail()
-                coroutineScope.launch { snackbarHostState.showSnackbar("Reserva rechazada") }
-            }
+            detail = detail, onDismiss = { viewModel.onDismissDetail() },
+            onMarkAsInUse = { viewModel.onMarkAsInUse(); coroutineScope.launch { snackbarHostState.showSnackbar("Vehículo marcado como retirado") } },
+            onCompleteRental = { viewModel.onCompleteRental(); coroutineScope.launch { snackbarHostState.showSnackbar("Vehículo devuelto con éxito") } },
+            onCancelRental = { viewModel.onCancelRental(); coroutineScope.launch { snackbarHostState.showSnackbar("Reserva cancelada correctamente") } },
+            onApproveRental = { rental -> viewModel.onApproveRental(rental); viewModel.onDismissDetail(); coroutineScope.launch { snackbarHostState.showSnackbar("Reserva aprobada") } },
+            onRejectRental = { rental, carId -> viewModel.onRejectRental(rental, carId); viewModel.onDismissDetail(); coroutineScope.launch { snackbarHostState.showSnackbar("Reserva rechazada") } }
         )
     }
 }
 
+// =====================================================================
+// COMPONENTES PREMIUM CLIENTE
+// =====================================================================
 
 @Composable
-private fun CarGridCard(
-    car: CarEntity,
-    rol: RolUsuario,
-    onClick: () -> Unit
-) {
+fun TopSearchBar(searchQuery: String, onSearchChange: (String) -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(
+            value = searchQuery, onValueChange = onSearchChange, modifier = Modifier.weight(1f),
+            placeholder = { Text("Busca tu auto ideal...", color = Color.Gray, fontSize = 13.sp) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Buscar", tint = Color.Gray) },
+            shape = RoundedCornerShape(24.dp),
+            colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Black, unfocusedIndicatorColor = Color(0xFFE5E7EB), cursorColor = Color.Black),
+            singleLine = true
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        IconButton(
+            onClick = { },
+            modifier = Modifier.size(54.dp).background(Color.White, shape = CircleShape).border(1.dp, Color(0xFFE5E7EB), CircleShape)
+        ) { Icon(Icons.Filled.List, contentDescription = "Filtros", tint = Color.Black) }
+    }
+}
+
+@Composable
+fun BrandFilterRow(selectedBrand: String, onBrandSelected: (String) -> Unit) {
+    val brands = listOf("Todos", "Toyota", "Nissan", "Honda", "Hyundai", "Kia", "Mazda", "Chevrolet", "Ford")
+    LazyRow(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        items(brands) { brand ->
+            val isSelected = selectedBrand == brand
+            val iconResId = when (brand.lowercase(Locale.getDefault())) {
+                "todos" -> com.sv.elveloz.R.drawable.logo_all
+                "toyota" -> com.sv.elveloz.R.drawable.logo_toyota
+                "nissan" -> com.sv.elveloz.R.drawable.logo_nissan
+                "honda" -> com.sv.elveloz.R.drawable.logo_honda
+                "hyundai" -> com.sv.elveloz.R.drawable.logo_hyundai
+                "kia" -> com.sv.elveloz.R.drawable.logo_kia
+                "mazda" -> com.sv.elveloz.R.drawable.logo_mazda
+                "chevrolet" -> com.sv.elveloz.R.drawable.logo_chevrolet
+                "ford" -> com.sv.elveloz.R.drawable.logo_ford
+                else -> 0
+            }
+            Surface(
+                shape = RoundedCornerShape(50), color = if (isSelected) Color(0xFF1F2937) else Color.White,
+                border = if (!isSelected) BorderStroke(1.dp, Color(0xFFE5E7EB)) else null,
+                modifier = Modifier.clickable { onBrandSelected(brand) }
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    if (iconResId != 0) {
+                        Image(painter = painterResource(id = iconResId), contentDescription = brand, modifier = Modifier.size(24.dp))
+                    } else {
+                        Box(modifier = Modifier.size(24.dp).background(if (isSelected) Color.White else Color.LightGray, CircleShape), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.DirectionsCar, contentDescription = null, tint = if (isSelected) Color.Black else Color.White, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = if (brand == "Todos") "ALL" else brand, color = if (isSelected) Color.White else Color.Black, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CustomerCarCard(car: CarEntity, onCardClick: () -> Unit, onReserveClick: () -> Unit) {
     val format = NumberFormat.getCurrencyInstance(Locale.US)
     val formattedPrice = format.format(car.pricePerDay)
     val isAvailable = car.status == CarStatus.DISPONIBLE
@@ -259,19 +358,22 @@ private fun CarGridCard(
         "nissan_sentra" -> com.sv.elveloz.R.drawable.nissan_sentra
         "honda_cr" -> com.sv.elveloz.R.drawable.honda_cr
         "hyundai_tucson" -> com.sv.elveloz.R.drawable.hyundai_tucson
+        "kia_picanto" -> com.sv.elveloz.R.drawable.kia_picanto
+        "mazda_cx" -> com.sv.elveloz.R.drawable.mazda_cx
+        "chevrolet_aveo" -> com.sv.elveloz.R.drawable.chevrolet_aveo
+        "ford_ranger" -> com.sv.elveloz.R.drawable.ford_ranger
         else -> 0
     }
 
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
+        // El clic general de la tarjeta sigue funcionando para ver detalles
+        modifier = Modifier.fillMaxWidth().clickable { onCardClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            // Contenedor Visual de la Imagen
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -280,85 +382,51 @@ private fun CarGridCard(
                     .background(Color(0xFFF3F4F6)),
                 contentAlignment = Alignment.Center
             ) {
+                Icon(
+                    imageVector = Icons.Default.FavoriteBorder,
+                    contentDescription = "Favorito",
+                    tint = Color.Gray,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp).size(20.dp)
+                )
+
                 if (imageResId != 0) {
-                    // Si encontró la imagen mapeada, la muestra a pantalla completa
-                    androidx.compose.foundation.Image(
-                        painter = androidx.compose.ui.res.painterResource(id = imageResId),
+                    Image(
+                        painter = painterResource(id = imageResId),
                         contentDescription = "${car.brand} ${car.model}",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                        modifier = Modifier.fillMaxSize().padding(12.dp),
+                        contentScale = ContentScale.Fit,
+                        // CONDICIÓN: Baja la opacidad a 40% (0.4f) si no está disponible
+                        alpha = if (isAvailable) 1f else 0.4f
                     )
                 } else {
-                    // Si no, muestra el ícono por defecto
                     Icon(
                         imageVector = Icons.Filled.DirectionsCar,
                         contentDescription = null,
                         modifier = Modifier.size(56.dp),
-                        tint = if (isAvailable) Color.DarkGray else Color.Gray.copy(alpha = 0.5f)
+                        tint = if (isAvailable) Color.Gray.copy(alpha = 0.5f) else Color.Gray.copy(alpha = 0.2f)
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
-
-            // Ya regresamos el texto a la normalidad
-            Text(
-                text = "${car.brand} ${car.model}",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = when (car.status) {
-                    CarStatus.DISPONIBLE -> "Disponible"
-                    CarStatus.PEND_APROBACION -> "Pend. Aprobación"
-                    CarStatus.EN_PROCESO -> "En Proceso"
-                    CarStatus.EN_USO -> "En Uso"
-                },
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                color = getStatusColor(car.status)
-            )
-
+            Text(text = "${car.brand} ${car.model}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(modifier = Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(text = "$formattedPrice/Día", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Text(
-                        text = formattedPrice,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.Black
-                    )
-                    Text(
-                        text = "/ Día",
-                        fontSize = 10.sp,
-                        color = Color.Gray
-                    )
-                }
-
+                // CONDICIÓN DEL BOTÓN: Gris y deshabilitado si no está disponible
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = if (isAvailable) Color(0xFF1F2937) else Color(0xFFE5E7EB)
+                    color = if (isAvailable) Color(0xFF1F2937) else Color(0xFFE5E7EB),
+                    modifier = if (isAvailable) Modifier.clickable { onReserveClick() } else Modifier
                 ) {
-                    Box(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
                         Text(
-                            text = if (isAvailable) "Reservar" else "Gestionar",
+                            // CONDICIÓN DEL TEXTO: Reemplazado por "No disponible"
+                            text = if (isAvailable) "Reservar" else "No disponible",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (isAvailable) Color.White else Color.DarkGray
+                            color = if (isAvailable) Color.White else Color.Gray
                         )
                     }
                 }
@@ -368,13 +436,148 @@ private fun CarGridCard(
 }
 
 @Composable
-private fun ActionRequiredCard(rental: RentalEntity, car: CarEntity?, onApprove: () -> Unit, onReject: () -> Unit) {
+fun CarDetailsDialog(car: CarEntity, onDismiss: () -> Unit, onReserve: () -> Unit) {
+    val format = NumberFormat.getCurrencyInstance(Locale.US)
+    val formattedPrice = format.format(car.pricePerDay)
+    val isAvailable = car.status == CarStatus.DISPONIBLE
+
+    val imageResId = when (car.imageResName.trim()) {
+        "toyota_corolla" -> com.sv.elveloz.R.drawable.toyota_corolla
+        "nissan_sentra" -> com.sv.elveloz.R.drawable.nissan_sentra
+        "honda_cr" -> com.sv.elveloz.R.drawable.honda_cr
+        "hyundai_tucson" -> com.sv.elveloz.R.drawable.hyundai_tucson
+        "kia_picanto" -> com.sv.elveloz.R.drawable.kia_picanto
+        "mazda_cx" -> com.sv.elveloz.R.drawable.mazda_cx
+        "chevrolet_aveo" -> com.sv.elveloz.R.drawable.chevrolet_aveo
+        "ford_ranger" -> com.sv.elveloz.R.drawable.ford_ranger
+        else -> 0
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        shape = RoundedCornerShape(24.dp),
+        title = null,
+        text = {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(160.dp).background(Color(0xFFF9FAFB), RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (imageResId != 0) {
+                        Image(
+                            painter = painterResource(id = imageResId), contentDescription = "${car.brand} ${car.model}",
+                            modifier = Modifier.fillMaxSize().padding(16.dp), contentScale = ContentScale.Fit,
+                            alpha = if (isAvailable) 1f else 0.4f
+                        )
+                    }
+                    if (!isAvailable) {
+                        Surface(color = Color.Black.copy(alpha = 0.7f), shape = RoundedCornerShape(6.dp)) {
+                            Text("Actualmente en uso", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp))
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(text = "${car.brand} ${car.model}", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // NUEVA FILA DE SPECS COMPACTA (Usando Emojis como íconos para no instalar dependencias extra)
+                Row(
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier.fillMaxWidth().background(Color(0xFFF3F4F6), RoundedCornerShape(12.dp)).padding(12.dp)
+                ) {
+                    Text(text = "⚙️ Auto", fontSize = 13.sp, color = Color.DarkGray, fontWeight = FontWeight.Medium)
+                    Text(text = "⛽ Gasolina", fontSize = 13.sp, color = Color.DarkGray, fontWeight = FontWeight.Medium)
+                    Text(text = "👤 5", fontSize = 13.sp, color = Color.DarkGray, fontWeight = FontWeight.Medium)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = "$formattedPrice / Día", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = if (isAvailable) Color(0xFF4CAF50) else Color.Gray)
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { if (isAvailable) onReserve() },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = if (isAvailable) Color.Black else Color.LightGray),
+                enabled = isAvailable
+            ) {
+                Text(if (isAvailable) "Ir a Reservar" else "Vehículo no disponible", color = if (isAvailable) Color.White else Color.DarkGray, fontWeight = FontWeight.Bold, modifier = Modifier.padding(vertical = 4.dp))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text("Cerrar", color = Color.Gray) }
+        }
+    )
+}
+
+// =====================================================================
+// COMPONENTES DE RECEPCIÓN
+// =====================================================================
+// (El resto del código sigue intacto para tu compañero)
+
+@Composable
+private fun CarGridCard(car: CarEntity, rol: RolUsuario, onClick: () -> Unit) {
+    val format = NumberFormat.getCurrencyInstance(Locale.US)
+    val formattedPrice = format.format(car.pricePerDay)
+    val isAvailable = car.status == CarStatus.DISPONIBLE
+    val imageResId = when (car.imageResName.trim()) {
+        "toyota_corolla" -> com.sv.elveloz.R.drawable.toyota_corolla
+        "nissan_sentra" -> com.sv.elveloz.R.drawable.nissan_sentra
+        "honda_cr" -> com.sv.elveloz.R.drawable.honda_cr
+        "hyundai_tucson" -> com.sv.elveloz.R.drawable.hyundai_tucson
+        "kia_picanto" -> com.sv.elveloz.R.drawable.kia_picanto
+        "mazda_cx" -> com.sv.elveloz.R.drawable.mazda_cx
+        "chevrolet_aveo" -> com.sv.elveloz.R.drawable.chevrolet_aveo
+        "ford_ranger" -> com.sv.elveloz.R.drawable.ford_ranger
+        else -> 0
+    }
     Card(
-        modifier = Modifier.width(280.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
-        border = BorderStroke(1.dp, Color(0xFFFFB74D)),
-        shape = RoundedCornerShape(12.dp)
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick), shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().height(110.dp).clip(RoundedCornerShape(12.dp)).background(Color(0xFFF3F4F6)), contentAlignment = Alignment.Center) {
+                if (imageResId != 0) {
+                    androidx.compose.foundation.Image(painter = androidx.compose.ui.res.painterResource(id = imageResId), contentDescription = "${car.brand} ${car.model}", modifier = Modifier.fillMaxSize(), contentScale = androidx.compose.ui.layout.ContentScale.Crop)
+                } else {
+                    Icon(imageVector = Icons.Filled.DirectionsCar, contentDescription = null, modifier = Modifier.size(56.dp), tint = if (isAvailable) Color.DarkGray else Color.Gray.copy(alpha = 0.5f))
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(text = "${car.brand} ${car.model}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = when (car.status) {
+                    CarStatus.DISPONIBLE -> "Disponible"
+                    CarStatus.PEND_APROBACION -> "Pend. Aprobación"
+                    CarStatus.EN_PROCESO -> "En Proceso"
+                    CarStatus.EN_USO -> "En Uso"
+                    CarStatus.MANTENIMIENTO -> "Mantenimiento"
+                },
+                fontSize = 11.sp, fontWeight = FontWeight.Medium, color = getStatusColor(car.status)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text(text = formattedPrice, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                    Text(text = "/ Día", fontSize = 10.sp, color = Color.Gray)
+                }
+                Surface(shape = RoundedCornerShape(10.dp), color = if (isAvailable) Color(0xFF1F2937) else Color(0xFFE5E7EB)) {
+                    Box(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
+                        Text(text = if (isAvailable) "Reservar" else "Gestionar", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isAvailable) Color.White else Color.DarkGray)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ActionRequiredCard(rental: RentalEntity, car: CarEntity?, onApprove: () -> Unit, onReject: () -> Unit) {
+    Card(modifier = Modifier.width(280.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)), border = BorderStroke(1.dp, Color(0xFFFFB74D)), shape = RoundedCornerShape(12.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Notifications, contentDescription = null, tint = Color(0xFFF57C00))
@@ -385,7 +588,6 @@ private fun ActionRequiredCard(rental: RentalEntity, car: CarEntity?, onApprove:
             Text(text = "Vehículo: ${car?.brand ?: ""} ${car?.model ?: ""}", fontWeight = FontWeight.Bold, color = Color.Black)
             Text(text = "Cliente: ${rental.customerName}", fontSize = 14.sp, color = Color.DarkGray)
             Text(text = "Costo: $${rental.totalCost}", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.Black)
-
             Spacer(modifier = Modifier.height(16.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                 TextButton(onClick = onReject) { Text("Rechazar", color = Color.Red) }
@@ -401,6 +603,7 @@ private fun getStatusColor(status: CarStatus) = when (status) {
     CarStatus.PEND_APROBACION -> Color(0xFF9C27B0)
     CarStatus.EN_PROCESO -> Color(0xFFFF9800)
     CarStatus.EN_USO -> Color(0xFF2196F3)
+    CarStatus.MANTENIMIENTO -> Color(0xFFF44336)
 }
 
 @Composable
@@ -430,8 +633,7 @@ private fun FilterChipsRow(selectedFilter: String, onFilterSelected: (String) ->
     LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items(filters) { filter ->
             FilterChip(
-                selected = selectedFilter == filter,
-                onClick = { onFilterSelected(filter) },
+                selected = selectedFilter == filter, onClick = { onFilterSelected(filter) },
                 label = {
                     Text(when(filter) {
                         "PEND_APROBACION" -> "Pendientes"
@@ -465,8 +667,7 @@ private fun RentalDetailDialog(detail: RentalDetailUiState, onDismiss: () -> Uni
     val car = detail.car
     val rental = detail.rental
     AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Color.White,
+        onDismissRequest = onDismiss, containerColor = Color.White,
         title = { Text("${car.brand} ${car.model}", color = Color.Black, fontWeight = FontWeight.Bold) },
         text = {
             Column {
@@ -487,9 +688,7 @@ private fun RentalDetailDialog(detail: RentalDetailUiState, onDismiss: () -> Uni
         },
         confirmButton = {
             when (car.status) {
-                CarStatus.PEND_APROBACION -> {
-                    Button(onClick = { if (rental != null) onApproveRental(rental) }) { Text("Aprobar Reserva") }
-                }
+                CarStatus.PEND_APROBACION -> { Button(onClick = { if (rental != null) onApproveRental(rental) }) { Text("Aprobar Reserva") } }
                 CarStatus.EN_PROCESO -> Button(onClick = onMarkAsInUse) { Text("Marcar como Retirado") }
                 CarStatus.EN_USO -> Button(onClick = onCompleteRental) { Text("Marcar como Devuelto") }
                 else -> {}
@@ -511,12 +710,7 @@ private fun RentalDetailDialog(detail: RentalDetailUiState, onDismiss: () -> Uni
 @Composable
 private fun RentalStepper(status: CarStatus) {
     val steps = listOf("Solicitado", "Aprobado", "En Uso", "Devuelto")
-    val currentIndex = when (status) {
-        CarStatus.PEND_APROBACION -> 0
-        CarStatus.EN_PROCESO -> 1
-        CarStatus.EN_USO -> 2
-        else -> 3
-    }
+    val currentIndex = when (status) { CarStatus.PEND_APROBACION -> 0; CarStatus.EN_PROCESO -> 1; CarStatus.EN_USO -> 2; else -> 3 }
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         steps.forEachIndexed { index, label ->
             val isActive = index <= currentIndex
@@ -539,17 +733,11 @@ private fun RentalDialog(car: CarEntity, onDismiss: () -> Unit, onConfirm: (Stri
     var pickupDateMs by remember { mutableStateOf<Long?>(null) }
     var returnDateMs by remember { mutableStateOf<Long?>(null) }
     var showPicker by remember { mutableStateOf(false) }
-
-    val calculatedCost = remember(pickupDateMs, returnDateMs) {
-        if (pickupDateMs != null && returnDateMs != null) calculateCost(pickupDateMs!!, returnDateMs!!) else null
-    }
-
+    val calculatedCost = remember(pickupDateMs, returnDateMs) { if (pickupDateMs != null && returnDateMs != null) calculateCost(pickupDateMs!!, returnDateMs!!) else null }
     val isFormValid = customerName.isNotBlank() && pickupDateMs != null && returnDateMs != null
 
     AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = Color.White,
-        shape = RoundedCornerShape(24.dp),
+        onDismissRequest = onDismiss, containerColor = Color.White, shape = RoundedCornerShape(24.dp),
         title = { Text("Reservar ${car.brand} ${car.model}", fontWeight = FontWeight.ExtraBold, color = Color.Black) },
         text = {
             Column {
@@ -584,9 +772,7 @@ private fun RentalDialog(car: CarEntity, onDismiss: () -> Unit, onConfirm: (Stri
                         }
                     }
                 }
-                calculatedCost?.onFailure { exception ->
-                    Text(exception.message ?: "Rango de fechas inválido", color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp))
-                }
+                calculatedCost?.onFailure { exception -> Text(exception.message ?: "Rango de fechas inválido", color = Color.Red, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp)) }
             }
         },
         confirmButton = {
@@ -601,7 +787,7 @@ private fun RentalDialog(car: CarEntity, onDismiss: () -> Unit, onConfirm: (Stri
     if (showPicker) {
         ElVelozDateTimePickerDialog(
             onDismiss = { showPicker = false },
-            onConfirm = { startDate, endDate, startTime, endTime -> pickupDateMs = startDate; returnDateMs = endDate; showPicker = false }
+            onConfirm = { startDate, endDate, _, _ -> pickupDateMs = startDate; returnDateMs = endDate; showPicker = false }
         )
     }
 }

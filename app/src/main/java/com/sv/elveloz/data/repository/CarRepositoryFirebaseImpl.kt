@@ -151,4 +151,13 @@ class CarRepositoryFirebaseImpl : CarRepository {
         }
         batch.commit()
     }
+
+    // NUEVA FUNCIÓN AGREGADA PARA RESOLVER EL ERROR DE LA INTERFAZ
+    override suspend fun addCar(car: CarEntity) {
+        try {
+            carsCollection.document(car.id.toString()).set(car).await()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }

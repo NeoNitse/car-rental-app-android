@@ -60,7 +60,6 @@ class CarRepositoryFirebaseImpl : CarRepository {
 
             allRentals
                 .filter { it.carId.toString() == carId.toString() }
-                // FILTRO CLAVE: Ignoramos el historial viejo, solo buscamos la renta que realmente nos importa
                 .filter { it.estado != "DEVUELTO" && it.estado != "RECHAZADA" }
                 .maxByOrNull { it.pickupDateMs ?: 0L }
 
@@ -152,7 +151,6 @@ class CarRepositoryFirebaseImpl : CarRepository {
         batch.commit()
     }
 
-    // NUEVA FUNCIÓN AGREGADA PARA RESOLVER EL ERROR DE LA INTERFAZ
     override suspend fun addCar(car: CarEntity) {
         try {
             carsCollection.document(car.id.toString()).set(car).await()

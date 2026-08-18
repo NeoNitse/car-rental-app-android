@@ -1,5 +1,6 @@
 package com.sv.elveloz.ui.login
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,7 +12,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -71,17 +75,17 @@ fun PantallaLogin(
             val topSpacer = if (screenHeight < 600.dp) 40.dp else 80.dp
             Spacer(modifier = Modifier.height(topSpacer))
 
-            // Recreación del Logo
-            Box(
+            // Recreación del Logo con Imagen Real
+            Image(
+                painter = painterResource(id = com.sv.elveloz.R.drawable.logo_app),
+                contentDescription = "Logo Horizon Rides",
                 modifier = Modifier
-                    .size(90.dp)
-                    .background(AzulNegro, shape = CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
-            }
+                    .size(120.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
             Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "AppLogo", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = AzulNegro)
+            Text(text = "Horizon Rides", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = AzulNegro)
 
             val middleSpacer = if (screenHeight < 600.dp) 30.dp else 50.dp
             Spacer(modifier = Modifier.height(middleSpacer))

@@ -1,6 +1,7 @@
 package com.sv.elveloz.ui.login
 
 import android.content.Context
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -12,7 +13,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -88,17 +92,17 @@ fun PantallaRegistro(
             val topSpacer = if (screenHeight < 600.dp) 30.dp else 70.dp
             Spacer(modifier = Modifier.height(topSpacer))
 
-            // Recreación del Logo
-            Box(
+            // Recreación del Logo con Imagen Real
+            Image(
+                painter = painterResource(id = com.sv.elveloz.R.drawable.logo_app),
+                contentDescription = "Horizon rides logo",
                 modifier = Modifier
-                    .size(70.dp)
-                    .background(AzulNegro, shape = CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(30.dp))
-            }
+                    .size(90.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
             Spacer(modifier = Modifier.height(12.dp))
-            Text(text = "AppLogo", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AzulNegro)
+            Text(text = "Horizon Rides", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AzulNegro)
 
             val middleSpacer = if (screenHeight < 600.dp) 20.dp else 40.dp
             Spacer(modifier = Modifier.height(middleSpacer))

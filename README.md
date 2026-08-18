@@ -12,13 +12,18 @@
 *Aplicación Android nativa para la gestión de alquiler de vehículos, desarrollada como proyecto académico.*
 </div>
 
-## 📖 Descripción del proyecto
+## Descarga Oficial
+
+Puedes ver la presentación de la aplicación y descargar el APK directamente desde nuestra página web simulada de Google Play:
+**[Sitio Web Oficial de Horizon Rides](https://neonitse.github.io/horizon-rides-web/)**
+
+## Descripción del proyecto
 
 **Horizon Rides** es un sistema de alquiler de autos con sincronización en la nube. La aplicación maneja dos tipos de usuarios:
 1. **Clientes:** Pueden registrarse, explorar el catálogo, validar su identidad usando Inteligencia Artificial y enviar solicitudes de alquiler.
 2. **Recepcionistas:** Tienen el control total del inventario, pueden aprobar o rechazar solicitudes en tiempo real y hacer seguimiento de los autos retirados y devueltos.
 
-##  Características principales
+## Características principales
 
 - **Sistema de Roles:** Inicio de sesión y registro gestionado mediante Firebase Authentication, separando las vistas de Cliente y Recepción.
 - **Base de Datos en la Nube:** Todo el inventario, usuarios y reservas se sincronizan en tiempo real gracias a Firebase Firestore.
@@ -27,7 +32,7 @@
 - **Flujo de Estados:** Máquina de estados estricta para los vehículos (`DISPONIBLE → PENDIENTE → EN_PROCESO → EN_USO → DISPONIBLE`).
 - **Cálculo de Costos:** Calculadora automática del total a pagar según las fechas seleccionadas en el calendario.
 
-##  Stack Tecnológico
+## Stack Tecnológico
 
 | Tecnología | Uso en el proyecto |
 |---|---|
@@ -38,15 +43,15 @@
 | **Google ML Kit** | Reconocimiento óptico de caracteres (OCR) para validar documentos. |
 | **Corrutinas / Flow** | Manejo de tareas asíncronas y programación reactiva. |
 
-##  Arquitectura
+## Arquitectura
 
 El proyecto está estructurado utilizando **MVVM (Model-View-ViewModel)** junto con principios de **Clean Architecture** para mantener el código ordenado y fácil de mantener:
 - **UI (Presentación):** Pantallas en Compose que solo observan estados.
-- **Domain (Casos de Uso):** La lógica de negocio separada en acciones específicas (ej. `RentCarUseCase`, `ApproveRentalUseCase`).
+- **Domain (Casos de Uso):** La lógica de negocio separada en acciones específicas (ej. RentCarUseCase, ApproveRentalUseCase).
 - **Data (Repositorios):** Conexión directa con Firebase Firestore para leer y escribir datos de forma remota.
 
-## ▶️ Instalación y ejecución
+## Instalación y ejecución
 
-1. Cloná el repositorio:
+1. Clona el repositorio:
    ```bash
    git clone [https://github.com/NeoNitse/car-rental-app-android.git](https://github.com/NeoNitse/car-rental-app-android.git)

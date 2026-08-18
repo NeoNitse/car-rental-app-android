@@ -37,7 +37,7 @@ fun TopSearchBar(searchQuery: String, onSearchChange: (String) -> Unit) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         OutlinedTextField(
             value = searchQuery, onValueChange = onSearchChange, modifier = Modifier.weight(1f),
-            placeholder = { Text("Busca tu auto ideal...", color = Color.Gray, fontSize = 13.sp) },
+            placeholder = { Text("Busca por marca o modelo...", color = Color.Gray, fontSize = 13.sp) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray) },
             shape = RoundedCornerShape(24.dp),
             colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Black, unfocusedIndicatorColor = Color(0xFFE5E7EB), cursorColor = Color.Black),

@@ -1,10 +1,8 @@
 package com.sv.elveloz.ui.catalog
 
 import android.content.Context
-import android.graphics.ImageDecoder
+import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -26,13 +24,11 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -41,10 +37,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.google.firebase.auth.FirebaseAuth
 import com.sv.elveloz.data.local.entity.CarEntity
 import com.sv.elveloz.domain.model.CarStatus
 import com.sv.elveloz.domain.model.RolUsuario
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 import java.util.Locale
 
 data class MockReservation(
@@ -75,32 +74,52 @@ fun CatalogScreen(
     var showReservationsDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
-    val sharedPrefs = remember { context.getSharedPreferences("ElVelozProfile", Context.MODE_PRIVATE) }
 
-    var profileFirstName by remember { mutableStateOf(sharedPrefs.getString("firstName", "Juan") ?: "Juan") }
-    var profileLastName by remember { mutableStateOf(sharedPrefs.getString("lastName", "Pérez") ?: "Pérez") }
-    var profileEmail by remember { mutableStateOf(sharedPrefs.getString("email", "juan.perez@elveloz.com") ?: "juan.perez@elveloz.com") }
-    var profilePhone by remember { mutableStateOf(sharedPrefs.getString("phone", "+503 7000-0000") ?: "+503 7000-0000") }
+    val auth = FirebaseAuth.getInstance()
+    val uid = auth.currentUser?.uid ?: "default"
+    val registeredEmail = auth.currentUser?.email ?: ""
+    val sharedPrefs = remember(uid) { context.getSharedPreferences("ElVelozProfile_$uid", Context.MODE_PRIVATE) }
 
-    var profileImageUri by remember { mutableStateOf<Uri?>(null) }
+    var profileFirstName by remember(uid) { mutableStateOf(sharedPrefs.getString("firstName", "") ?: "") }
+    var profileLastName by remember(uid) { mutableStateOf(sharedPrefs.getString("lastName", "") ?: "") }
+    var profileEmail by remember(uid) { mutableStateOf(sharedPrefs.getString("email", registeredEmail) ?: registeredEmail) }
+    var profilePhone by remember(uid) { mutableStateOf(sharedPrefs.getString("phone", "") ?: "") }
 
-    val profileBitmap = remember(profileImageUri) {
-        profileImageUri?.let { uri ->
-            try {
-                if (Build.VERSION.SDK_INT < 28) {
-                    @Suppress("DEPRECATION")
-                    MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
-                } else {
-                    val source = ImageDecoder.createSource(context.contentResolver, uri)
-                    ImageDecoder.decodeBitmap(source)
-                }
-            } catch (e: Exception) { null }
-        }?.asImageBitmap()
+    var profileBitmap by remember(uid) { mutableStateOf<ImageBitmap?>(null) }
+
+    LaunchedEffect(uid) {
+        try {
+            val file = File(context.filesDir, "profile_img_$uid.jpg")
+            if (file.exists()) {
+                profileBitmap = BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap()
+            } else {
+                profileBitmap = null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? -> if (uri != null) profileImageUri = uri }
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val file = File(context.filesDir, "profile_img_$uid.jpg")
+                val outputStream = FileOutputStream(file)
+
+                inputStream?.use { input ->
+                    outputStream.use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                profileBitmap = BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     var mockReservations by remember {
         mutableStateOf(
@@ -113,6 +132,9 @@ fun CatalogScreen(
     }
 
     val notificacionesCliente = uiState.allCars.filter { it.status == CarStatus.EN_PROCESO }
+    var notificacionesLimpiadas by remember { mutableStateOf(setOf<Int>()) }
+    val notificacionesActivas = notificacionesCliente.filter { it.id !in notificacionesLimpiadas }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -137,7 +159,7 @@ fun CatalogScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(text = "Recepción", fontSize = 12.sp, color = Color.Gray)
-                            Text(text = "El Veloz", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                            Text(text = "Horizon Rides", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                         }
                         Spacer(modifier = Modifier.weight(1f))
                         IconButton(onClick = onLogout) { Icon(Icons.Default.ExitToApp, contentDescription = null) }
@@ -167,15 +189,16 @@ fun CatalogScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(Icons.Filled.Notifications, contentDescription = null, tint = Color.Black, modifier = Modifier.size(22.dp))
-                            if (notificacionesCliente.isNotEmpty()) {
+                            if (notificacionesActivas.isNotEmpty()) {
                                 Box(modifier = Modifier.align(Alignment.TopEnd).offset(x = (-4).dp, y = 4.dp).size(16.dp).background(Color(0xFF4B5563), CircleShape), contentAlignment = Alignment.Center) {
-                                    Text(text = notificacionesCliente.size.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                                    Text(text = notificacionesActivas.size.toString(), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
                         Spacer(modifier = Modifier.width(12.dp))
+
                         if (profileBitmap != null) {
-                            Image(bitmap = profileBitmap, contentDescription = null, modifier = Modifier.size(44.dp).clip(CircleShape).clickable { showProfileDialog = true }, contentScale = ContentScale.Crop)
+                            Image(bitmap = profileBitmap!!, contentDescription = null, modifier = Modifier.size(44.dp).clip(CircleShape).clickable { showProfileDialog = true }, contentScale = ContentScale.Crop)
                         } else {
                             Image(painter = painterResource(id = com.sv.elveloz.R.drawable.perfil), contentDescription = null, modifier = Modifier.size(44.dp).clip(CircleShape).clickable { showProfileDialog = true }, contentScale = ContentScale.Crop)
                         }
@@ -238,10 +261,6 @@ fun CatalogScreen(
         }
     }
 
-    // ==============================================================================
-    // DIÁLOGOS EN LÍNEA (Perfil, Notificaciones y Reservaciones)
-    // ==============================================================================
-
     if (showProfileDialog) {
         Dialog(onDismissRequest = { showProfileDialog = false }) {
             Surface(shape = RoundedCornerShape(24.dp), color = Color.White, modifier = Modifier.fillMaxWidth()) {
@@ -250,7 +269,7 @@ fun CatalogScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                     Box(contentAlignment = Alignment.Center) {
                         if (profileBitmap != null) {
-                            Image(bitmap = profileBitmap, contentDescription = null, modifier = Modifier.size(90.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+                            Image(bitmap = profileBitmap!!, contentDescription = null, modifier = Modifier.size(90.dp).clip(CircleShape), contentScale = ContentScale.Crop)
                         } else {
                             Image(painter = painterResource(id = com.sv.elveloz.R.drawable.perfil), contentDescription = null, modifier = Modifier.size(90.dp).clip(CircleShape), contentScale = ContentScale.Crop)
                         }
@@ -260,28 +279,31 @@ fun CatalogScreen(
                         ) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color.DarkGray) } }
                     }
                     Spacer(modifier = Modifier.height(12.dp))
-                    Text(text = "$profileFirstName $profileLastName", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
+
+                    val displayName = if (profileFirstName.isBlank() && profileLastName.isBlank()) "Nuevo Usuario" else "$profileFirstName $profileLastName"
+                    Text(text = displayName, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
+
                     Spacer(modifier = Modifier.height(24.dp))
                     OutlinedTextField(
-                        value = profileFirstName, onValueChange = { profileFirstName = it }, placeholder = { Text("First Name", color = Color.Gray) },
+                        value = profileFirstName, onValueChange = { profileFirstName = it }, placeholder = { Text("Nombre", color = Color.Gray) },
                         modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(12.dp),
                         colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Black, unfocusedIndicatorColor = Color(0xFFE5E7EB), cursorColor = Color.Black)
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     OutlinedTextField(
-                        value = profileLastName, onValueChange = { profileLastName = it }, placeholder = { Text("Last Name", color = Color.Gray) },
+                        value = profileLastName, onValueChange = { profileLastName = it }, placeholder = { Text("Apellido", color = Color.Gray) },
                         modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(12.dp),
                         colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Black, unfocusedIndicatorColor = Color(0xFFE5E7EB), cursorColor = Color.Black)
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     OutlinedTextField(
-                        value = profileEmail, onValueChange = { profileEmail = it }, placeholder = { Text("Email", color = Color.Gray) },
+                        value = profileEmail, onValueChange = { profileEmail = it }, placeholder = { Text("ejemplo@correo.com", color = Color.Gray) },
                         modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(12.dp),
                         colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Black, unfocusedIndicatorColor = Color(0xFFE5E7EB), cursorColor = Color.Black)
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     OutlinedTextField(
-                        value = profilePhone, onValueChange = { profilePhone = it }, placeholder = { Text("Phone", color = Color.Gray) },
+                        value = profilePhone, onValueChange = { profilePhone = it }, placeholder = { Text("Teléfono (+503 0000-0000)", color = Color.Gray) },
                         modifier = Modifier.fillMaxWidth(), singleLine = true, shape = RoundedCornerShape(12.dp),
                         colors = TextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, focusedIndicatorColor = Color.Black, unfocusedIndicatorColor = Color(0xFFE5E7EB), cursorColor = Color.Black)
                     )
@@ -289,8 +311,11 @@ fun CatalogScreen(
                     Button(
                         onClick = {
                             sharedPrefs.edit().apply {
-                                putString("firstName", profileFirstName); putString("lastName", profileLastName)
-                                putString("email", profileEmail); putString("phone", profilePhone); apply()
+                                putString("firstName", profileFirstName)
+                                putString("lastName", profileLastName)
+                                putString("email", profileEmail)
+                                putString("phone", profilePhone)
+                                apply()
                             }
                             showProfileDialog = false
                             coroutineScope.launch { snackbarHostState.showSnackbar("Datos guardados correctamente") }
@@ -298,9 +323,28 @@ fun CatalogScreen(
                         modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(50), colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1F2937))
                     ) { Text("Guardar Cambios", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
                     Spacer(modifier = Modifier.height(16.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(onClick = onLogout) { Text("Cerrar Sesión", color = Color.Red, fontWeight = FontWeight.Bold) }
-                        TextButton(onClick = { showProfileDialog = false; showReservationsDialog = true }) { Text("Reservaciones", color = Color(0xFF1F2937), fontWeight = FontWeight.Bold) }
+
+                    // EL NUEVO DISEÑO DE LOS BOTONES
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedButton(
+                            onClick = onLogout,
+                            modifier = Modifier.weight(1f).height(44.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, Color(0xFFFFCDD2)),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFFFFF1F0))
+                        ) {
+                            Text("Cerrar Sesión", color = Color(0xFFD32F2F), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        }
+
+                        OutlinedButton(
+                            onClick = { showProfileDialog = false; showReservationsDialog = true },
+                            modifier = Modifier.weight(1f).height(44.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, Color(0xFFE5E7EB)),
+                            colors = ButtonDefaults.outlinedButtonColors(containerColor = Color(0xFFF9FAFB))
+                        ) {
+                            Text("Reservaciones", color = Color(0xFF1F2937), fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        }
                     }
                 }
             }
@@ -329,8 +373,8 @@ fun CatalogScreen(
                                     if (res.status == "Pendiente") {
                                         TextButton(
                                             onClick = {
-                                                mockReservations = mockReservations.map { if (it.id == res.id) it.copy(status = "Cancelada") else it }
-                                                coroutineScope.launch { snackbarHostState.showSnackbar("Reservación cancelada") }
+                                                mockReservations = mockReservations.filter { it.id != res.id }
+                                                coroutineScope.launch { snackbarHostState.showSnackbar("Reservación cancelada y eliminada") }
                                             }
                                         ) { Text("Cancelar", color = Color.Red, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
                                     }
@@ -349,10 +393,10 @@ fun CatalogScreen(
             onDismissRequest = { showCustomerNotifications = false }, containerColor = Color.White, shape = RoundedCornerShape(20.dp),
             title = { Text("Notificaciones", fontWeight = FontWeight.Bold, color = Color.Black) },
             text = {
-                if (notificacionesCliente.isNotEmpty()) {
+                if (notificacionesActivas.isNotEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("¡Buenas noticias! Tienes reservas aprobadas:", color = Color(0xFF4CAF50), fontWeight = FontWeight.Medium)
-                        notificacionesCliente.forEach { car ->
+                        notificacionesActivas.forEach { car ->
                             Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F4F6)), modifier = Modifier.fillMaxWidth()) {
                                 Text("Tu ${car.brand} ${car.model} está listo para ser retirado en sucursal.", modifier = Modifier.padding(12.dp), fontSize = 13.sp, color = Color.Black)
                             }
@@ -360,11 +404,18 @@ fun CatalogScreen(
                     }
                 } else { Text("No tienes notificaciones nuevas por el momento.", color = Color.Gray) }
             },
-            confirmButton = { TextButton(onClick = { showCustomerNotifications = false }) { Text("Cerrar", color = Color.Black, fontWeight = FontWeight.Bold) } }
+            confirmButton = {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    if (notificacionesActivas.isNotEmpty()) {
+                        TextButton(onClick = {
+                            notificacionesLimpiadas = notificacionesLimpiadas + notificacionesActivas.map { it.id }.toSet()
+                        }) { Text("Limpiar", color = Color.Red, fontWeight = FontWeight.Bold) }
+                    }
+                    TextButton(onClick = { showCustomerNotifications = false }) { Text("Cerrar", color = Color.Black, fontWeight = FontWeight.Bold) }
+                }
+            }
         )
     }
-
-
 
     carDetailsToShow?.let { car -> CarDetailsDialog(car = car, onDismiss = { carDetailsToShow = null }, onReserve = { carDetailsToShow = null; viewModel.onCarClicked(car) }) }
 

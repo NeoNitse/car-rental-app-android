@@ -87,24 +87,71 @@ fun CarGridCard(car: CarEntity, rol: RolUsuario, onClick: () -> Unit) {
     }
 }
 
+// TARJETA DE NOTIFICACIÓN (Sin botones para evitar redundancia)
 @Composable
-fun ActionRequiredCard(rental: RentalEntity, car: CarEntity?, onApprove: () -> Unit, onReject: () -> Unit) {
-    Card(modifier = Modifier.width(280.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)), border = BorderStroke(1.dp, Color(0xFFFFB74D)), shape = RoundedCornerShape(12.dp)) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Notifications, contentDescription = null, tint = Color(0xFFF57C00))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Nueva Solicitud", fontWeight = FontWeight.Bold, color = Color(0xFFF57C00))
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(text = "Vehículo: ${car?.brand ?: ""} ${car?.model ?: ""}", fontWeight = FontWeight.Bold, color = Color.Black)
-            Text(text = "Cliente: ${rental.customerName}", fontSize = 14.sp, color = Color.DarkGray)
-            Text(text = "Costo: $${rental.totalCost}", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.Black)
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onReject) { Text("Rechazar", color = Color.Red) }
-                Spacer(modifier = Modifier.width(8.dp))
-                Button(onClick = onApprove, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))) { Text("Aprobar") }
+fun ActionRequiredCard(
+    rental: RentalEntity,
+    car: CarEntity?,
+    onApprove: () -> Unit, // Estos parámetros ya no se usan en la UI, pero los dejamos para no romper el CatalogScreen
+    onReject: () -> Unit
+) {
+    val format = NumberFormat.getCurrencyInstance(Locale.US)
+    val formattedCost = format.format(rental.totalCost)
+
+    Card(
+        modifier = Modifier
+            .width(280.dp)
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFF3F4F6)),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Título Principal
+            Text(
+                text = car?.let { "${it.brand} ${it.model}" } ?: "Vehículo Desconocido",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = Color.Black,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            // Datos del Cliente
+            Text(
+                text = rental.customerName,
+                fontSize = 13.sp,
+                color = Color.Gray,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            // Fila de Precio y Mensaje de Acción
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Precio resaltado
+                Text(
+                    text = formattedCost,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
+                )
+
+                // Mensaje sutil indicando la acción
+                Text(
+                    text = "Ir al catálogo para gestionar",
+                    color = Color(0xFF4CAF50), // Un verde que invita a la acción
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }

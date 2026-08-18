@@ -65,4 +65,5 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation(platform("com.google.firebase:firebase-bom:33.0.0"))
     implementation("com.google.firebase:firebase-auth-ktx:22.3.1")
+    implementation("com.google.mlkit:text-recognition:16.0.0")
 }

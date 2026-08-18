@@ -1,5 +1,6 @@
 package com.sv.elveloz.ui.login
 
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -20,11 +21,13 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun PantallaRegistro(
@@ -33,17 +36,37 @@ fun PantallaRegistro(
     onBack: () -> Unit
 ) {
     val estado by viewModel.estado.collectAsState()
+
+    // Variables separadas para Nombre y Apellido
     var nombre by remember { mutableStateOf("") }
+    var apellido by remember { mutableStateOf("") }
+
     var correo by remember { mutableStateOf("") }
     var contrasena by remember { mutableStateOf("") }
     var contrasenaVisible by remember { mutableStateOf(false) }
-    
+
     val scrollState = rememberScrollState()
     val configuration = LocalConfiguration.current
     val screenHeight = configuration.screenHeightDp.dp
+    val context = LocalContext.current
 
+    // EL PUENTE DE SINCRONIZACIÓN
     LaunchedEffect(estado) {
         if (estado is EstadoRegistro.Exito) {
+            // 1. Obtenemos el ID del usuario que se acaba de registrar en Firebase
+            val auth = FirebaseAuth.getInstance()
+            val uid = auth.currentUser?.uid ?: "default"
+
+            // 2. Guardamos sus datos directamente en la caja fuerte de su perfil
+            val sharedPrefs = context.getSharedPreferences("ElVelozProfile_$uid", Context.MODE_PRIVATE)
+            sharedPrefs.edit().apply {
+                putString("firstName", nombre)
+                putString("lastName", apellido)
+                putString("email", correo)
+                apply()
+            }
+
+            // 3. Continuamos a la app
             onRegistroExitoso()
             viewModel.resetEstado()
         }
@@ -80,24 +103,45 @@ fun PantallaRegistro(
             val middleSpacer = if (screenHeight < 600.dp) 20.dp else 40.dp
             Spacer(modifier = Modifier.height(middleSpacer))
 
-            // Campo Nombre Completo
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(text = "Nombre Completo", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = GrisTexto)
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = nombre,
-                    onValueChange = { nombre = it },
-                    placeholder = { Text("Tu nombre", color = Color(0xFF9CA3AF)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = GrisFondo,
-                        unfocusedContainerColor = GrisFondo,
-                        focusedBorderColor = AzulNegro,
-                        unfocusedBorderColor = GrisBorde,
-                    ),
-                    singleLine = true
-                )
+            // Campos de Nombre y Apellido uno a la par del otro
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = "Nombre", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = GrisTexto)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = nombre,
+                        onValueChange = { nombre = it },
+                        placeholder = { Text("Tu nombre", color = Color(0xFF9CA3AF)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = GrisFondo,
+                            unfocusedContainerColor = GrisFondo,
+                            focusedBorderColor = AzulNegro,
+                            unfocusedBorderColor = GrisBorde,
+                        ),
+                        singleLine = true
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = "Apellido", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = GrisTexto)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = apellido,
+                        onValueChange = { apellido = it },
+                        placeholder = { Text("Tu apellido", color = Color(0xFF9CA3AF)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = GrisFondo,
+                            unfocusedContainerColor = GrisFondo,
+                            focusedBorderColor = AzulNegro,
+                            unfocusedBorderColor = GrisBorde,
+                        ),
+                        singleLine = true
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -158,7 +202,8 @@ fun PantallaRegistro(
                 CircularProgressIndicator(color = AzulNegro)
             } else {
                 Button(
-                    onClick = { viewModel.registrar(nombre, correo, contrasena) },
+                    // Unimos Nombre y Apellido para que Firebase lo registre completo en la base de datos
+                    onClick = { viewModel.registrar("$nombre $apellido", correo, contrasena) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp),

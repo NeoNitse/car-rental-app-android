@@ -69,7 +69,6 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
             Box(
                 modifier = Modifier
                     .size(100.dp)
-                    // Aquí le decimos que se mueva en el eje X
                     .offset(x = offsetX)
                     .background(Color.White, shape = CircleShape),
                 contentAlignment = Alignment.Center

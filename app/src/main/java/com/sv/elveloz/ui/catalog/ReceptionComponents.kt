@@ -72,14 +72,37 @@ fun CarGridCard(car: CarEntity, rol: RolUsuario, onClick: () -> Unit) {
                 fontSize = 11.sp, fontWeight = FontWeight.Medium, color = getStatusColor(car.status)
             )
             Spacer(modifier = Modifier.height(12.dp))
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
-                    Text(text = formattedPrice, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = formattedPrice,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.Black,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     Text(text = "/ Día", fontSize = 10.sp, color = Color.Gray)
                 }
-                Surface(shape = RoundedCornerShape(10.dp), color = if (isAvailable) Color(0xFF1F2937) else Color(0xFFE5E7EB)) {
-                    Box(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
-                        Text(text = if (isAvailable) "Reservar" else "Gestionar", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isAvailable) Color.White else Color.DarkGray)
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (isAvailable) Color(0xFF1F2937) else Color(0xFFE5E7EB),
+                    modifier = Modifier.wrapContentWidth()
+                ) {
+                    Box(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (isAvailable) "Reservar" else "Gestionar",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isAvailable) Color.White else Color.DarkGray,
+                            maxLines = 1
+                        )
                     }
                 }
             }

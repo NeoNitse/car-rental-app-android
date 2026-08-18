@@ -7,7 +7,6 @@
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.0.0-7F52FF?logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-UI-4285F4?logo=jetpackcompose&logoColor=white)
 ![Firebase](https://img.shields.io/badge/Firebase-Auth%20%7C%20Firestore-FFCA28?logo=firebase&logoColor=black)
-![ML Kit](https://img.shields.io/badge/Google%20ML%20Kit-OCR-4285F4?logo=google&logoColor=white)
 
 *Aplicación Android nativa para la gestión de alquiler de vehículos, desarrollada como proyecto académico.*
 </div>

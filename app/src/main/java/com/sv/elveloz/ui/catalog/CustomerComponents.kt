@@ -136,18 +136,36 @@ fun CustomerCarCard(car: CarEntity, onCardClick: () -> Unit, onReserveClick: () 
             Spacer(modifier = Modifier.height(10.dp))
             Text(text = "${car.brand} ${car.model}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(modifier = Modifier.height(12.dp))
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(text = "$formattedPrice/Día", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "$formattedPrice/Día",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
 
                 Surface(
                     shape = RoundedCornerShape(10.dp),
                     color = if (isAvailable) Color(0xFF1F2937) else Color(0xFFE5E7EB),
-                    modifier = if (isAvailable) Modifier.clickable { onReserveClick() } else Modifier
+                    modifier = (if (isAvailable) Modifier.clickable { onReserveClick() } else Modifier)
+                        .wrapContentWidth()
                 ) {
-                    Box(modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Text(
                             text = if (isAvailable) "Reservar" else "No disponible",
-                            fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (isAvailable) Color.White else Color.Gray
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isAvailable) Color.White else Color.Gray,
+                            maxLines = 1
                         )
                     }
                 }

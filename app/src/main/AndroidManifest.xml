@@ -9,15 +9,15 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
-        android:label="El Veloz"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:icon="@drawable/logo_app"
+        android:label="Horizon Rides"
+        android:roundIcon="@drawable/logo_app"
         android:supportsRtl="true"
         android:theme="@style/Theme.ElVeloz">
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="El Veloz"
+            android:label="Horizon Rides"
             android:theme="@style/Theme.ElVeloz"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

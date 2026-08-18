@@ -18,7 +18,7 @@
 1. **Clientes:** Pueden registrarse, explorar el catálogo, validar su identidad usando Inteligencia Artificial y enviar solicitudes de alquiler.
 2. **Recepcionistas:** Tienen el control total del inventario, pueden aprobar o rechazar solicitudes en tiempo real y hacer seguimiento de los autos retirados y devueltos.
 
-## ✨ Características principales
+##  Características principales
 
 - **Sistema de Roles:** Inicio de sesión y registro gestionado mediante Firebase Authentication, separando las vistas de Cliente y Recepción.
 - **Base de Datos en la Nube:** Todo el inventario, usuarios y reservas se sincronizan en tiempo real gracias a Firebase Firestore.
@@ -27,7 +27,7 @@
 - **Flujo de Estados:** Máquina de estados estricta para los vehículos (`DISPONIBLE → PENDIENTE → EN_PROCESO → EN_USO → DISPONIBLE`).
 - **Cálculo de Costos:** Calculadora automática del total a pagar según las fechas seleccionadas en el calendario.
 
-## 🛠️ Stack Tecnológico
+##  Stack Tecnológico
 
 | Tecnología | Uso en el proyecto |
 |---|---|
@@ -38,7 +38,7 @@
 | **Google ML Kit** | Reconocimiento óptico de caracteres (OCR) para validar documentos. |
 | **Corrutinas / Flow** | Manejo de tareas asíncronas y programación reactiva. |
 
-## 🏗️ Arquitectura
+##  Arquitectura
 
 El proyecto está estructurado utilizando **MVVM (Model-View-ViewModel)** junto con principios de **Clean Architecture** para mantener el código ordenado y fácil de mantener:
 - **UI (Presentación):** Pantallas en Compose que solo observan estados.

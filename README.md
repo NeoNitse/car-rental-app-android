@@ -14,7 +14,7 @@
 
 ## Descarga Oficial
 
-Puedes ver la presentación de la aplicación y descargar el APK directamente desde nuestra página web simulada de Google Play:
+descargar el APK directamente desde nuestra página web de Google Play:
 **[Sitio Web Oficial de Horizon Rides](https://neonitse.github.io/horizon-rides-web/)**
 
 ## Descripción del proyecto

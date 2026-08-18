@@ -2,6 +2,7 @@ package com.sv.elveloz.ui.catalog
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
 import com.sv.elveloz.data.local.entity.CarEntity
 import com.sv.elveloz.data.local.entity.RentalEntity
 import com.sv.elveloz.domain.model.CarStatus
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 data class RentalDetailUiState(
@@ -42,6 +44,9 @@ class CatalogViewModel(
     private val agregarVehiculoUseCase: com.sv.elveloz.domain.usecase.CasoUsoAgregarVehiculo
 ) : ViewModel() {
 
+    private val currentUserId: String
+        get() = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+
     fun onAgregarVehiculo(marca: String, modelo: String, precio: Double, imagenUrl: String, ubicacion: String) {
         viewModelScope.launch {
             val nuevoVehiculo = CarEntity(
@@ -49,7 +54,7 @@ class CatalogViewModel(
                 model = modelo,
                 pricePerDay = precio,
                 status = CarStatus.DISPONIBLE,
-                imageResName = "car_placeholder", // Default res
+                imageResName = "car_placeholder",
                 imageUrl = imagenUrl,
                 location = ubicacion,
                 rating = 5.0
@@ -113,7 +118,15 @@ class CatalogViewModel(
         initialValue = CatalogUiState(isLoading = true)
     )
 
+    // FILTRO ESTRICTO DE NOTIFICACIONES POR SESIÓN DE FIREBASE
     val pendingRentals: StateFlow<List<RentalEntity>> = getPendingRentalsUseCase()
+        .map { listaGlobal ->
+            if (rolActual == RolUsuario.RECEPCIONISTA) {
+                listaGlobal
+            } else {
+                listaGlobal.filter { it.usuarioId == currentUserId }
+            }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -161,11 +174,13 @@ class CatalogViewModel(
         viewModelScope.launch {
             val rental = RentalEntity(
                 carId = car.id,
+                usuarioId = currentUserId, // ASIGNA EL ID DE FIREBASE
                 customerName = customerName,
                 pickupDateMs = pickupDateMs,
                 returnDateMs = returnDateMs,
                 totalCost = totalCost,
-                estado = "SOLICITADA"
+                estado = "SOLICITADA",
+                notificada = false // LA RESERVA NACE COMO NO LEIDA
             )
             rentCarUseCase(rental, car.id)
             _selectedCar.value = null
@@ -174,20 +189,16 @@ class CatalogViewModel(
 
     fun onApproveRental(rental: RentalEntity) {
         viewModelScope.launch {
-            // FUERZA BRUTA: Cambiamos la palabra a APROBADA para que desaparezca del radar
             val updatedRental = rental.copy(estado = "APROBADA", isActive = true)
             aprobarReservaUseCase(updatedRental)
-            // Avanzamos el carro
             updateCarStatusUseCase(rental.carId, CarStatus.EN_PROCESO)
         }
     }
 
     fun onRejectRental(rental: RentalEntity, carId: Int) {
         viewModelScope.launch {
-            // FUERZA BRUTA: Cambiamos a RECHAZADA
             val updatedRental = rental.copy(estado = "RECHAZADA", isActive = false)
             rechazarReservaUseCase(updatedRental, carId)
-            // Liberamos el carro
             updateCarStatusUseCase(carId, CarStatus.DISPONIBLE)
         }
     }
@@ -207,7 +218,6 @@ class CatalogViewModel(
             if (rental != null) {
                 completeRentalUseCase(rental, detail.car.id)
             } else {
-                // EL SALVAVIDAS: Si el recibo no existe (Auto Huérfano), libera el auto de todas formas
                 updateCarStatusUseCase(detail.car.id, CarStatus.DISPONIBLE)
             }
             _rentalDetail.value = null
@@ -221,7 +231,6 @@ class CatalogViewModel(
             if (rental != null) {
                 cancelRentalUseCase(rental, detail.car.id)
             } else {
-                // EL SALVAVIDAS
                 updateCarStatusUseCase(detail.car.id, CarStatus.DISPONIBLE)
             }
             _rentalDetail.value = null

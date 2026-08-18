@@ -7,10 +7,12 @@ import androidx.room.PrimaryKey
 data class RentalEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val carId: Int = 0,
+    val usuarioId: String = "",
     val customerName: String = "",
     val pickupDateMs: Long = 0L,
     val returnDateMs: Long = 0L,
     val totalCost: Double = 0.0,
     val isActive: Boolean = true,
-    val estado: String = "SOLICITADA" // SOLICITADA, APROBADA, FINALIZADA, RECHAZADA
+    val estado: String = "SOLICITADA",
+    val notificada: Boolean = false // <--- EL SEGURO ANTIBUCLES
 )

@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import com.sv.elveloz.data.local.entity.CarEntity
 import com.sv.elveloz.domain.model.CarStatus
 import com.sv.elveloz.domain.model.RolUsuario
@@ -87,6 +88,27 @@ fun CatalogScreen(
 
     var profileBitmap by remember(uid) { mutableStateOf<ImageBitmap?>(null) }
 
+    // ESTADO PARA GUARDAR LAS NOTIFICACIONES REALES
+    var notificacionesActivas by remember { mutableStateOf(emptyList<com.sv.elveloz.data.local.entity.RentalEntity>()) }
+
+    // OBTENEMOS LAS NOTIFICACIONES EN TIEMPO REAL DIRECTO DE FIREBASE
+    LaunchedEffect(uid) {
+        if (rol == RolUsuario.CLIENTE) {
+            val db = FirebaseFirestore.getInstance()
+            db.collection("rentals")
+                .whereEqualTo("usuarioId", uid) // ¡Seguridad: solo las mías!
+                .whereEqualTo("estado", "APROBADA")
+                .whereEqualTo("notificada", false) // ¡Solo las no leídas!
+                .addSnapshotListener { snapshot, e ->
+                    if (e != null) return@addSnapshotListener
+                    if (snapshot != null) {
+                        val rentals = snapshot.toObjects(com.sv.elveloz.data.local.entity.RentalEntity::class.java)
+                        notificacionesActivas = rentals
+                    }
+                }
+        }
+    }
+
     LaunchedEffect(uid) {
         try {
             val file = File(context.filesDir, "profile_img_$uid.jpg")
@@ -130,10 +152,6 @@ fun CatalogScreen(
             )
         )
     }
-
-    val notificacionesCliente = uiState.allCars.filter { it.status == CarStatus.EN_PROCESO }
-    var notificacionesLimpiadas by remember { mutableStateOf(setOf<Int>()) }
-    val notificacionesActivas = notificacionesCliente.filter { it.id !in notificacionesLimpiadas }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -324,7 +342,6 @@ fun CatalogScreen(
                     ) { Text("Guardar Cambios", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // EL NUEVO DISEÑO DE LOS BOTONES
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedButton(
                             onClick = onLogout,
@@ -396,9 +413,11 @@ fun CatalogScreen(
                 if (notificacionesActivas.isNotEmpty()) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("¡Buenas noticias! Tienes reservas aprobadas:", color = Color(0xFF4CAF50), fontWeight = FontWeight.Medium)
-                        notificacionesActivas.forEach { car ->
+                        notificacionesActivas.forEach { rental ->
+                            // ENCONTRAR EL COCHE PARA MOSTRAR SU NOMBRE
+                            val carInfo = uiState.allCars.find { it.id == rental.carId }
                             Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F4F6)), modifier = Modifier.fillMaxWidth()) {
-                                Text("Tu ${car.brand} ${car.model} está listo para ser retirado en sucursal.", modifier = Modifier.padding(12.dp), fontSize = 13.sp, color = Color.Black)
+                                Text("Tu reserva (Total: $${rental.totalCost}) está lista para ser retirada en sucursal.", modifier = Modifier.padding(12.dp), fontSize = 13.sp, color = Color.Black)
                             }
                         }
                     }
@@ -408,7 +427,12 @@ fun CatalogScreen(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     if (notificacionesActivas.isNotEmpty()) {
                         TextButton(onClick = {
-                            notificacionesLimpiadas = notificacionesLimpiadas + notificacionesActivas.map { it.id }.toSet()
+                            // EL BOTON MÁGICO: ACTUALIZA FIREBASE PARA SIEMPRE
+                            val db = FirebaseFirestore.getInstance()
+                            notificacionesActivas.forEach { rental ->
+                                db.collection("rentals").document(rental.id.toString()).update("notificada", true)
+                            }
+                            showCustomerNotifications = false
                         }) { Text("Limpiar", color = Color.Red, fontWeight = FontWeight.Bold) }
                     }
                     TextButton(onClick = { showCustomerNotifications = false }) { Text("Cerrar", color = Color.Black, fontWeight = FontWeight.Bold) }

@@ -38,7 +38,7 @@ El proyecto está estructurado utilizando **MVVM (Model-View-ViewModel)** junto 
 - **UI (Presentación):** Pantallas en Compose que solo observan estados.
 - **Domain (Casos de Uso):** La lógica de negocio separada en acciones específicas (ej. RentCarUseCase, ApproveRentalUseCase).
 - **Data (Repositorios):** Conexión directa con Firebase Firestore para leer y escribir datos de forma remota.
-## Instalación y ejecución
+## Instalaciónn y ejecución
 1. Clona el repositorio:
    ```bash
    git clone [https://github.com/NeoNitse/car-rental-app-android.git](https://github.com/NeoNitse/car-rental-app-android.git)

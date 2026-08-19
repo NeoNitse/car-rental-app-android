@@ -9,7 +9,7 @@
 *Aplicación Android nativa para la gestión de alquiler de vehículos, desarrollada como proyecto académico.*
 </div>
 ## Descarga Oficial
-descargar el APK directamente desde nuestra página web simulada de Google Play:
+Puedes ver la presentación de la aplicación y descargar el APK directamente desde nuestra página web simulada de Google Play:
 **[Sitio Web Oficial de Horizon Rides](https://neonitse.github.io/horizon-rides-web/)**
 ## Descripción del proyecto
 **Horizon Rides** es un sistema de alquiler de autos con sincronización en la nube. La aplicación maneja dos tipos de usuarios:

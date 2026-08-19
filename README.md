@@ -11,6 +11,30 @@
 *Aplicación Android nativa para la gestión de alquiler de vehículos, desarrollada como proyecto académico.*
 </div>
 
+```
+
+## Manual de Usuario
+
+La app funciona distinto según si entrás como cliente o como recepcionista.
+
+### Cliente
+
+1. Creá una cuenta con tu correo y contraseña, o iniciá sesión si ya tenés una.
+2. En la pantalla principal aparece el catálogo de vehículos disponibles. Tocá cualquiera para ver sus detalles y el precio por día.
+3. Elegí el vehículo que querés alquilar y seleccioná la fecha de inicio y de devolución en el calendario. El costo total se calcula solo, según los días que elegiste.
+4. Antes de mandar la solicitud, la app te pide una foto de tu DUI o licencia. Un lector OCR revisa que el documento sea legible.
+5. Enviá la solicitud. El vehículo queda en estado `PENDIENTE` hasta que un recepcionista la revise.
+6. Te llega una notificación cuando la solicitud es aprobada o rechazada. Si fue aprobada, podés ver el estado de tu alquiler en tu perfil.
+
+### Recepcionista
+
+1. Iniciá sesión con tu cuenta de recepcionista.
+2. El panel principal muestra las solicitudes pendientes de revisión.
+3. Revisá los datos del cliente y el documento que subió antes de aprobar o rechazar la solicitud.
+4. Al aprobar, el vehículo cambia de `PENDIENTE` a `EN_PROCESO`, y pasa a `EN_USO` cuando el cliente lo retira.
+5. Cuando el cliente devuelve el vehículo, marcalo como devuelto para que vuelva a estado `DISPONIBLE`.
+6. Desde el mismo panel se puede administrar el inventario: agregar vehículos nuevos, editarlos o darlos de baja.
+
 ## Descarga Oficial
 
 descargar el APK directamente desde nuestra página web de Google Play:
